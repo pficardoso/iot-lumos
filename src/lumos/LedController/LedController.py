@@ -2,6 +2,7 @@ import logging
 import lumos.logger
 import os
 import json
+import requests
 
 logger = logging.getLogger("led_controller")
 
@@ -57,6 +58,27 @@ class LedController:
     """
     Workers
     """
+    def toggle_led(self, led_name):
+
+        logger.info(f"Receive a request to toggle led with name {led_name}")
+        if led_name not in self._leds.keys():
+            logger.error(f"Led with \"{led_name}\" is not configured in LedController")
+
+        ip = self._leds[led_name]
+        logger.info(f"Sending toggle message to led \"{led_name}\", with ip {ip}")
+
+        error_message = f"Toggle message was not sent with success to led \"{led_name}\""
+        try:
+            url = f"http://{ip}/win&T=2"
+            response = requests.get(url)
+            if response.status_code == 200:
+                logger.info(f"Toggle led \"{led_name}\" done with success")
+            else:
+                logger.error(error_message)
+        except:
+            logger.error(error_message)
+
+        return
 
     """
     Boolean methods
