@@ -127,6 +127,39 @@ class LedController:
 
         return
 
+    def interpret_request(self, request_data: dict):
+
+        logger.info("Interpreting a request made by listener: resolving listener identification...")
+
+        if "id" not in request_data:
+            logger.error("Impossible to make listener identification, id was not given")
+            return
+        source_id = request_data["id"]
+
+        source_listener_name = self.get_listener_name_by_id(source_id)
+        if source_listener_name == None:
+            logger.error(f"Impossible to make listener identification, listener with id {source_id} is not configured")
+            return
+        logger.info(f"Interpreting request made by listener {source_listener_name} with id {source_id}")
+
+        if "listener_action" not in request_data:
+            logger.error(f"Impossible to interpret_request, listener_action was not given in request")
+            return
+
+        listener_action = request_data["listener_action"]
+        led_name, led_action, map_success = self.get_led_and_action_through_mapping(source_listener_name, listener_action)
+
+        if not map_success:
+            logger.error(f"Could not get the target led and action related to listner "
+                         f"{source_listener_name} and action {listener_action}")
+            return
+
+        logger.info(f"Request was interpreted with success: triggering action {led_name} to led {led_name}")
+        led_action_function_to_trigger = led_action_functions[led_action]
+        led_action_function_to_trigger(self, led_name)
+        return
+
+
     """
     Boolean methods
     """
