@@ -96,9 +96,16 @@ class LedController:
             return None
 
     def get_led_and_action_through_mapping(self, listener_name, listener_action):
-        led_name = self._map_listener_led_actions[listener_name][listener_action]["led_name"]
-        led_action = self._map_listener_led_actions[listener_name][listener_action]["led_action"]
-        return led_name, led_action
+        success = False
+        led_name, led_action = None, None
+        try:
+            led_name = self._map_listener_led_actions[listener_name][listener_action]["led_name"]
+            led_action = self._map_listener_led_actions[listener_name][listener_action]["led_action"]
+            success = True
+        except:
+            pass
+
+        return led_name, led_action, success
 
 
     """
@@ -133,31 +140,31 @@ class LedController:
 
         if "id" not in request_data:
             logger.error("Impossible to make listener identification, id was not given")
-            return
+            return False
         source_id = request_data["id"]
 
         source_listener_name = self.get_listener_name_by_id(source_id)
         if source_listener_name == None:
-            logger.error(f"Impossible to make listener identification, listener with id {source_id} is not configured")
-            return
-        logger.info(f"Interpreting request made by listener {source_listener_name} with id {source_id}")
+            logger.error(f"Impossible to make listener identification, listener with id '{source_id}' is not configured")
+            return False
+        logger.info(f"Interpreting request made by listener '{source_listener_name}' with id '{source_id}'")
 
         if "listener_action" not in request_data:
             logger.error(f"Impossible to interpret_request, listener_action was not given in request")
-            return
+            return False
 
         listener_action = request_data["listener_action"]
         led_name, led_action, map_success = self.get_led_and_action_through_mapping(source_listener_name, listener_action)
 
         if not map_success:
-            logger.error(f"Could not get the target led and action related to listner "
-                         f"{source_listener_name} and action {listener_action}")
-            return
+            logger.error(f"Could not get the target led and action related to listener "
+                         f"'{source_listener_name}' and action '{listener_action}'")
+            return False
 
-        logger.info(f"Request was interpreted with success: triggering action {led_name} to led {led_name}")
+        logger.info(f"Request was interpreted with success: triggering action '{led_name}' to led '{led_name}'")
         led_action_function_to_trigger = led_action_functions[led_action]
         led_action_function_to_trigger(self, led_name)
-        return
+        return True
 
 
     """
