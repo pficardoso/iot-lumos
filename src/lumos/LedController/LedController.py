@@ -25,7 +25,7 @@ class LedController:
         self.name = None
         self._leds = None
         self._listeners = None
-        self._listener_led_map = None
+        self._map_listener_led_actions = dict()
         self.host = None
         self.port = None
         self._configured = False
@@ -34,6 +34,27 @@ class LedController:
     """
     Setters/Loaders
     """
+    def _load_listener_led_actions_map(self, map_data:list):
+        for map_unit in map_data:
+            listener = map_unit["listener"]
+            led      = map_unit["led"]
+
+            if listener not in self._map_listener_led_actions:
+                self._map_listener_led_actions[listener] = dict()
+
+            if led not in self._map_listener_led_actions[listener]:
+                self._map_listener_led_actions[listener][led] = dict()
+
+            listener_action, led_action = map_unit["listener_action"], map_unit["led_action"]
+            if led_action not in led_action_functions:
+                logger.error(f"During the construction of mapping between listener and leds, it was given an invalid"
+                             "led action - led action given: {led_action}")
+                raise Exception(f"Led action '{led_action}' does not exist. Please use one "
+                                f"of the actions in {led_action_functions}")
+
+            self._map_listener_led_actions[listener][led][listener_action] = led_action
+
+
 
     def config(self, config_path):
 
@@ -53,7 +74,7 @@ class LedController:
             self.name = config_data["name"]
             self._leds = config_data["leds"]
             self._listeners = config_data["listeners"]
-            self._listener_led_map = config_data["listener_led_map"]
+            self._load_listener_led_actions_map(config_data["listener_led_map"])
             self._configured = True
             logger.info(f"LedController was configured successfully with name: {self.name}")
         else:
@@ -104,3 +125,4 @@ class LedController:
     """
     Util methods / Static methods
     """
+
