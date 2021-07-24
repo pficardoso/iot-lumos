@@ -6,6 +6,14 @@ import requests
 
 logger = logging.getLogger("led_controller")
 
+led_action_functions = dict()
+
+def led_action(led_action_name):
+    def decorate(led_action_function):
+        led_action_functions[led_action_name] = led_action_function
+        return led_action_function
+    return decorate
+
 
 class LedController:
     """"""
@@ -54,10 +62,13 @@ class LedController:
     """
     Getters
     """
+    def get_led_actions_list(self):
+        return list(led_action_functions.keys())
 
     """
     Workers
     """
+    @led_action("toggle")
     def toggle_led(self, led_name):
 
         logger.info(f"Receive a request to toggle led with name {led_name}")
