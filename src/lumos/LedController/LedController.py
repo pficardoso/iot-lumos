@@ -3,6 +3,7 @@ import lumos.logger
 import os
 import json
 import requests
+from src.lumos.LedController.ConfigChecker import ConfigChecker
 
 logger = logging.getLogger("led_controller")
 
@@ -28,6 +29,7 @@ class LedController:
         self.host = None
         self.port = None
         self._configured = False
+        self._config_checker = ConfigChecker()
 
     """
     Setters/Loaders
@@ -46,7 +48,7 @@ class LedController:
             config_data = json.load(f_conf)["led_controller"]
 
         # check validity of config data
-        if self.config_data_is_valid(config_data):
+        if self._config_checker.check_config_data(config_data):
             # makes parse of data into instance
             self.name = config_data["name"]
             self._leds = config_data["leds"]
@@ -102,69 +104,3 @@ class LedController:
     """
     Util methods / Static methods
     """
-
-    @staticmethod
-    def config_data_is_valid(config_data: dict):
-
-        # IMPROVEMENT: Break this function into steps. Consider to pass this logic to a new class, allowing the
-        #    code reusability in other classes that require this logic during their configuration
-
-        valid = True
-        MANDATORY_FIELDS = ["name", "leds", "listeners", "listener_led_map"]
-
-        # check if all mandatory fields exist
-        missing_filds = MANDATORY_FIELDS.copy()
-        for field in MANDATORY_FIELDS:
-            if field in config_data.keys():
-                missing_filds.remove(field)
-        if len(missing_filds) != 0:
-            valid = False
-            raise Exception(f"Fields {missing_filds} are missing")
-
-        # check the values in leds, listeners and listener_led_map
-        # 1 - check if there are repeated devices with the same name or ip
-        for x in ("leds", "listeners"):
-            device_names, device_ips, repeated_names, repeated_ips = set(), set(), set(), set()
-            for device_name, device_ip in config_data[x].items():
-
-                #This next piece of code does not make sense considering that device_names are keys of a dict. During
-                #the load of json data the keys are overwriten.
-                #TODO: The best thing to do is to add tuples instead of tuples
-
-                """
-                if device_name in device_names:
-                    repeated_names.add(device_name)
-                    valid = False
-                else:
-                    device_names.add(device_name)
-                """
-                if device_ip in device_ips:
-                    repeated_ips.add(device_ip)
-                    valid = False
-                else:
-                    device_ips.add(device_ip)
-
-            if len(repeated_names) != 0:
-                raise Exception(f"Field {x} has the following names repeated: {repeated_names}")
-            if len(repeated_ips) != 0:
-                raise Exception(f"Field {x} has the following ips repeated: {repeated_ips}")
-
-        # 2 - check if mapping between listener and leds are using existent leds and listeners names:
-        wrong_led, wrong_listener = set(), set()
-        for listener_name, led_name in config_data["listener_led_map"].items():
-            if led_name not in config_data["leds"].keys():
-                valid = False
-                wrong_led.add(led_name)
-            if listener_name not in config_data["listeners"].keys():
-                valid = False
-                wrong_listener.add(listener_name)
-
-        if len(wrong_led) != 0:
-            raise Exception(f"The following leds are not present in config file: ids {wrong_led}")
-        if len(wrong_listener) != 0:
-            raise Exception(f"The following listeners are not present in config file: ids {wrong_listener}")
-
-        # TODO: check if there are not collisions between mapping of led and listeners.
-        #   Consider if you want to avoid this and launch Exception or just to launch a warning
-
-        return True
