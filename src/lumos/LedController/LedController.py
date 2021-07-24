@@ -114,7 +114,7 @@ class LedController:
     @led_action("toggle")
     def toggle_led(self, led_name):
 
-        logger.info(f"Receive a request to toggle led with name {led_name}")
+        logger.info(f"Received a request to toggle led with name {led_name}")
         if led_name not in self._leds.keys():
             logger.error(f"Led with \"{led_name}\" is not configured in LedController")
 
@@ -136,7 +136,7 @@ class LedController:
 
     def interpret_request(self, request_data: dict):
 
-        logger.info("Interpreting a request made by listener: resolving listener identification...")
+        logger.info("Interpreting a request made by a listener: resolving listener identification...")
 
         if "id" not in request_data:
             logger.error("Impossible to make listener identification, id was not given")
@@ -147,7 +147,8 @@ class LedController:
         if source_listener_name == None:
             logger.error(f"Impossible to make listener identification, listener with id '{source_id}' is not configured")
             return False
-        logger.info(f"Interpreting request made by listener '{source_listener_name}' with id '{source_id}'")
+        logger.info(f"Listener identification done with success. "
+                    f"Interpreting request made by listener '{source_listener_name}' with id '{source_id}'")
 
         if "listener_action" not in request_data:
             logger.error(f"Impossible to interpret_request, listener_action was not given in request")
@@ -161,7 +162,7 @@ class LedController:
                          f"'{source_listener_name}' and action '{listener_action}'")
             return False
 
-        logger.info(f"Request was interpreted with success: triggering action '{led_name}' to led '{led_name}'")
+        logger.info(f"Request was interpreted with success: triggering action '{led_action}' to led '{led_name}'")
         led_action_function_to_trigger = led_action_functions[led_action]
         led_action_function_to_trigger(self, led_name)
         return True
