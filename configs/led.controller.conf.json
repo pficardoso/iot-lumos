@@ -1,15 +1,23 @@
 {
   "led_controller": {
-    "name":"alpha",
+    "name": "alpha",
     "leds": {
-      "window":"127.0.0.1"
+      "window": "192.168.2.182"
     },
     "listeners": {
-      "window":"198.0.1.2"
+      "window": {
+        "id":"d5db29cd03a2ed055086cef9c31c252b4587d6d0",
+        "type": "hand_clap_detector"
+      }
     },
-    "listener_led_map": {
-      "window":"window"
-    },
+    "listener_led_map": [
+      {
+        "listener": "window",
+        "led": "window",
+        "listener_action": "two_clap_detected",
+        "led_action": "toggle"
+      }
+    ],
     "host": "localhost",
     "port": "8000"
   }
