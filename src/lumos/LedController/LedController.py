@@ -25,6 +25,7 @@ class LedController:
         self.name = None
         self._leds = None
         self._listeners = None
+        self._listeners_ids = dict()
         self._map_listener_led_actions = dict()
         self.host = None
         self.port = None
@@ -37,13 +38,12 @@ class LedController:
     def _load_listener_led_actions_map(self, map_data:list):
         for map_unit in map_data:
             listener = map_unit["listener"]
-            led      = map_unit["led"]
+            listener_action = map_unit["listener_action"]
+            led_name = map_unit["led"]
 
             if listener not in self._map_listener_led_actions:
                 self._map_listener_led_actions[listener] = dict()
 
-            if led not in self._map_listener_led_actions[listener]:
-                self._map_listener_led_actions[listener][led] = dict()
 
             listener_action, led_action = map_unit["listener_action"], map_unit["led_action"]
             if led_action not in led_action_functions:
@@ -52,8 +52,7 @@ class LedController:
                 raise Exception(f"Led action '{led_action}' does not exist. Please use one "
                                 f"of the actions in {led_action_functions}")
 
-            self._map_listener_led_actions[listener][led][listener_action] = led_action
-
+            self._map_listener_led_actions[listener][listener_action] = {"led_name":led_name, "led_action":led_action}
 
 
     def config(self, config_path):
@@ -74,6 +73,8 @@ class LedController:
             self.name = config_data["name"]
             self._leds = config_data["leds"]
             self._listeners = config_data["listeners"]
+            for listener_name, listener_data in self._listeners.items():
+                self._listeners_ids[listener_data["id"]] = listener_name
             self._load_listener_led_actions_map(config_data["listener_led_map"])
             self._configured = True
             logger.info(f"LedController was configured successfully with name: {self.name}")
@@ -87,6 +88,18 @@ class LedController:
     """
     def get_led_actions_list(self):
         return list(led_action_functions.keys())
+
+    def get_listener_name_by_id(self, id):
+        if id in self._listeners_ids:
+            return self._listeners_ids[id]
+        else:
+            return None
+
+    def get_led_and_action_through_mapping(self, listener_name, listener_action):
+        led_name = self._map_listener_led_actions[listener_name][listener_action]["led_name"]
+        led_action = self._map_listener_led_actions[listener_name][listener_action]["led_action"]
+        return led_name, led_action
+
 
     """
     Workers
