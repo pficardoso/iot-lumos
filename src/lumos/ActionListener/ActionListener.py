@@ -13,6 +13,7 @@ class ActionListener(metaclass=abc.ABCMeta):
 
     def __init__(self,):
         """Constructor for ActionListener"""
+        self.name = "ActionListener"
         self.id = None
         self.type = None
         self.led_controller_ip = None
@@ -58,6 +59,36 @@ class ActionListener(metaclass=abc.ABCMeta):
     Workers
     """
 
+    @abc.abstractmethod
+    def _build_engine(self):
+        pass
+
+    @abc.abstractmethod
+    def _start_engine(self):
+        pass
+
+    def _start_heartbeats_mechanism(self):
+        #Todo
+        pass
+
+    def start(self):
+
+        logger.info(f"Starting {self.name}...")
+        if not self.configured:
+            logger.error(f"Could not start {self.name}. Not configured")
+            raise Exception("Not configured")
+
+        if not self._check_connection_led_controller():
+            msg = f"Could not connect with led controller, with ip addred {self.led_controller_ip}"
+            logger.error(msg)
+            raise Exception(msg)
+
+        self._build_engine()
+        self._start_engine() #starts the thread of engine
+        self._start_heartbeats_mechanism()
+
+        #Todo: loop that waits from messages of queue and interprets them
+
     """
     Boolean methods
     """
@@ -65,7 +96,9 @@ class ActionListener(metaclass=abc.ABCMeta):
     """
     Checkers
     """
-
+    def _check_connection_led_controller(self):
+        #Todo
+        pass
     """
     Util methods / Static methods
     """
