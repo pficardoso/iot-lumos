@@ -1,6 +1,7 @@
 import abc
 import logging
 import json
+import requests
 import lumos.logger
 from src.lumos.ActionListener.ConfigChecker import ConfigChecker
 
@@ -10,6 +11,7 @@ class ActionListener(metaclass=abc.ABCMeta):
     """"""
 
     default_led_controller_port = 8000
+    heartbeat_endpoint = "/listener_heartbeat"
 
     def __init__(self,):
         """Constructor for ActionListener"""
@@ -17,6 +19,7 @@ class ActionListener(metaclass=abc.ABCMeta):
         self.id = None
         self.type = None
         self.led_controller_ip = None
+        self.led_controller_heartbeat_url = None
         self.led_controller_port = None
         self.configured = False
         self._config_checker = ConfigChecker()
@@ -45,6 +48,7 @@ class ActionListener(metaclass=abc.ABCMeta):
                                     if "led_controller_port" in config_data.keys() \
                                     else ActionListener.default_led_controller_port
         self.led_controller_ip = config_data["led_controller_ip"]
+        self.led_controller_heartbeat_url = f"http://{self.led_controller_ip}:{self.led_controller_port}{ActionListener.heartbeat_endpoint}"
 
         return config_check_flag
 
@@ -97,8 +101,17 @@ class ActionListener(metaclass=abc.ABCMeta):
     Checkers
     """
     def _check_connection_led_controller(self):
-        #Todo
-        pass
+
+        data = {"id":self.id}
+
+        try:
+            response = requests.post(self.led_controller_heartbeat_url,data=json.dumps(data))
+        except requests.exceptions.ConnectionError:
+            return False
+
+        status_code = response.status_code
+        return (status_code == 200)
+
     """
     Util methods / Static methods
     """
