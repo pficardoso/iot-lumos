@@ -3,6 +3,8 @@ import logging
 import json
 import requests
 import lumos.logger
+import threading
+import time
 from src.lumos.ActionListener.ConfigChecker import ConfigChecker
 
 logger = logging.getLogger("action_listener")
@@ -11,6 +13,7 @@ class ActionListener(metaclass=abc.ABCMeta):
     """"""
 
     default_led_controller_port = 8000
+    default_heartbeat_period = 660 #seconds
     heartbeat_endpoint = "/listener_heartbeat"
 
     def __init__(self,):
@@ -23,6 +26,8 @@ class ActionListener(metaclass=abc.ABCMeta):
         self.led_controller_port = None
         self.configured = False
         self._config_checker = ConfigChecker()
+        self._heartbeat_period = None #seconds
+        self._heartbeat_thread = None
 
     """
     Setters/Loaders
@@ -49,6 +54,9 @@ class ActionListener(metaclass=abc.ABCMeta):
                                     else ActionListener.default_led_controller_port
         self.led_controller_ip = config_data["led_controller_ip"]
         self.led_controller_heartbeat_url = f"http://{self.led_controller_ip}:{self.led_controller_port}{ActionListener.heartbeat_endpoint}"
+        self._heartbeat_period = int(config_data["heartbeat_period"]) \
+                                if "heartbeat_period" in config_data.keys() \
+                                else ActionListener.default_heartbeat_period
 
         return config_check_flag
 
@@ -72,8 +80,23 @@ class ActionListener(metaclass=abc.ABCMeta):
         pass
 
     def _start_heartbeats_mechanism(self):
-        #Todo
-        pass
+
+        def heartbeats_mechanism(period):
+            start_time = time.time()
+            while True:
+                current_time = time.time()
+                if (current_time - start_time) > period:
+                    logger.info("Sending heartbeat to led controller")
+                    start_time = current_time
+                    if self._check_connection_led_controller():
+                        logger.info("Heartbeat sent with success")
+                    else:
+                        logger.error("Heartbeat was sent unsuccessfully")
+
+
+        self._heartbeat_thread = threading.Thread(target=heartbeats_mechanism, args=(self._heartbeat_period,), daemon=True)
+        self._heartbeat_thread.start()
+
 
     def start(self):
 
