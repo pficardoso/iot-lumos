@@ -20,7 +20,7 @@ class ActionListener(metaclass=abc.ABCMeta):
         """Constructor for ActionListener"""
         self.name = "ActionListener"
         self.id = None
-        self.type = None
+        self.type = "ActionListener"
         self.led_controller_ip = None
         self.led_controller_heartbeat_url = None
         self.led_controller_port = None
@@ -61,7 +61,7 @@ class ActionListener(metaclass=abc.ABCMeta):
         return config_check_flag
 
     @abc.abstractmethod
-    def _config_specialized(self, config_path:dict) -> bool:
+    def _config_specialized(self, config_data:dict) -> bool:
         pass
     """
     Getters
