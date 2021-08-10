@@ -1,5 +1,10 @@
+import threading
+import time
+import logging
+import lumos.logger
 from src.lumos.ActionListener.ActionListener import ActionListener
 
+logger = logging.getLogger("action_listener")
 
 
 class TimerActionListener(ActionListener):
@@ -29,10 +34,22 @@ class TimerActionListener(ActionListener):
     Workers
     """
     def _build_engine(self):
-        pass
+        logger.info("Building engine")
+
+        def timer_mechanism():
+            start_time = time.time()
+            while True:
+                current_time = time.time()
+                if (current_time - start_time) > self.timer_period:
+                    self._add_detected_action("timeout")
+                    logger.info("Finished time period.")
+                    start_time = current_time
+                    logger.info("Starting another timer iteration")
+
+        self._timer_thread = threading.Thread(target=timer_mechanism)
 
     def _start_engine(self):
-        pass
+        self._timer_thread.start()
     """
     Boolean methods
     """
