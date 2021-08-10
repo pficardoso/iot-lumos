@@ -1,6 +1,7 @@
 import abc
 import logging
 import json
+import queue
 import requests
 import lumos.logger
 import threading
@@ -28,6 +29,7 @@ class ActionListener(metaclass=abc.ABCMeta):
         self._config_checker = ConfigChecker()
         self._heartbeat_period = None #seconds
         self._heartbeat_thread = None
+        self._detected_actions_queue = queue.Queue()
 
     """
     Setters/Loaders
@@ -63,6 +65,16 @@ class ActionListener(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _config_specialized(self, config_data:dict) -> bool:
         pass
+
+    def _add_detected_action(self, action_name:str, action_param=None):
+        item = {"action":action_name}
+        if action_param:
+            if not isinstance(action_param, dict):
+                raise Exception(f"action_params should be a dict - {type(action_param)}  was given")
+            item["action_param"] = action_param
+
+        self._detected_actions_queue.put(item)
+
     """
     Getters
     """
@@ -97,6 +109,27 @@ class ActionListener(metaclass=abc.ABCMeta):
         self._heartbeat_thread = threading.Thread(target=heartbeats_mechanism, args=(self._heartbeat_period,), daemon=True)
         self._heartbeat_thread.start()
 
+    def _start_process_actions_queue_mechanism(self):
+
+        def mechanism():
+            while True:
+                detected_action_item = self._detected_actions_queue.get()
+                self._send_detected_action(detected_action_item)
+                self._detected_actions_queue.task_done()
+
+        t = threading.Thread(target=mechanism)
+        t.start()
+
+
+    def _send_detected_action(self, item):
+        request_data = {}
+        request_data["id"]=self.id
+        request_data["listener_action"]=item["action"]
+        target_url = f"http://{self.led_controller_ip}:{self.led_controller_port}/listener_request"
+        r = requests.post(target_url,
+                      data=json.dumps(request_data))
+        logger.info(f"Send detected action to {target_url} with data {request_data}")
+        ## check response and report on log
 
     def start(self):
 
@@ -106,15 +139,16 @@ class ActionListener(metaclass=abc.ABCMeta):
             raise Exception("Not configured")
 
         if not self._check_connection_led_controller():
-            msg = f"Could not connect with led controller, with ip addred {self.led_controller_ip}"
+            msg = f"Could not connect with led controller, with ip address {self.led_controller_ip}"
             logger.error(msg)
             raise Exception(msg)
 
         self._build_engine()
         self._start_engine() #starts the thread of engine
         self._start_heartbeats_mechanism()
+        self._start_process_actions_queue_mechanism()
+        logger.info(f"{self.name} started")
 
-        #Todo: loop that waits from messages of queue and interprets them
 
     """
     Boolean methods
