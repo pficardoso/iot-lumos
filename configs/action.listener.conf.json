@@ -1,0 +1,8 @@
+{
+  "action_listener": {
+    "id": "0e28903c2cbcbdd1b8c94ef8266dc3ebbf904299",
+    "type":  "base",
+    "led_controller_ip": "localhost",
+    "led_controller_port": "8000"
+  }
+}
