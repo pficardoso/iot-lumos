@@ -167,6 +167,23 @@ class LedController:
         led_action_function_to_trigger(self, led_name)
         return True
 
+    def interpret_heartbeat(self, request_data:dict):
+        logger.info("Interpreting an heartbeat received by a listener: resolving listener identification...")
+
+        if "id" not in request_data:
+            logger.error("Impossible to make listener identification, id was not given")
+            return False
+        source_id = request_data["id"]
+
+        source_listener_name = self.get_listener_name_by_id(source_id)
+        if source_listener_name == None:
+            logger.error(f"Impossible to make listener identification, listener with id '{source_id}' is not configured")
+            return False
+        logger.info(f"Listener identification done with success. "
+                    f"Heartbeat received from listener '{source_listener_name}' with id '{source_id}'")
+
+        return False
+
 
     """
     Boolean methods

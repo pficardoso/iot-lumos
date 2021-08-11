@@ -26,13 +26,35 @@ class ListenerRequestHandler(RequestHandler):
 
         if request_success:
             logger.info("WebService: the POST request received in Listener Request endpoint was done successfully")
+            self.set_status(200)
         else:
             logger.info("WebService: the POST request received in Listener Request endpoint was done unsuccessfully")
+            self.set_status(400)
+
+class ListenerHeartbeatHandler(RequestHandler):
+
+    def post(self):
+        logger.info("WebService: received a POST request in  Listener Heartbeat endpoint. Processing...")
+
+        request_success = False
+        try:
+            request_data = json.loads(self.request.body)
+        except:
+            logger.error("WebService: could not fetch data from request body")
+            self.set_status(400)
+            request_success = False
+
+        led_controller.interpret_heartbeat(request_data)
+
+        logger.info("WebService: the POST request received in Listener Heartbeat endpoint was done successfully")
+        self.set_status(200)
+
 
 class WebService():
 
     def __init__(self, port=8000):
         self._app = tornado.web.Application([
+            (r"/listener_heartbeat", ListenerHeartbeatHandler),
             (r"/listener_request", ListenerRequestHandler)
         ])
         self._port=port
