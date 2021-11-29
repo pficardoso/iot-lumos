@@ -7,14 +7,14 @@ from src.lumos.ActionListener.ActionListener import ActionListener
 logger = logging.getLogger("action_listener")
 
 
-class TimerActionListener(ActionListener):
+class Timer(ActionListener):
     """"""
 
     def __init__(self,):
         ActionListener.__init__(self)
-        self.name = "TimerActionListener"
-        self.type = "TimerActionListener"
-        """Constructor for TimerActionListener"""
+        self.name = "Timer"
+        self.type = "Timer"
+        """Constructor for Timer"""
 
     """
     Setters/Loaders
