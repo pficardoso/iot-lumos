@@ -23,6 +23,7 @@ class Timer(ActionListener):
 
         config_check_flag = self._config_checker.check_config_data(config_data, self.type)
         self.timer_period = int(config_data["timer_period"])
+        logger.info(f"Configured with time period of {self.timer_period} seconds")
 
         return config_check_flag
 
