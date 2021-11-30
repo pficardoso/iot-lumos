@@ -1,6 +1,3 @@
-
-
-
 class ConfigChecker():
 
     _mandatory_fields = ["id", "type", "led_controller_ip"]
@@ -13,7 +10,7 @@ class ConfigChecker():
     def check_config_data(self, config_data:dict, type="base"):
 
         if type == "base": self.mandatory_fields = ConfigChecker._mandatory_fields
-        elif type == "TimerActionListener": self.mandatory_fields = ConfigChecker._mandatory_fields_timer
+        elif type == "Timer": self.mandatory_fields = ConfigChecker._mandatory_fields_timer
         else: raise Exception(f"Type {type} does not exist")
 
         mandatory_check = self._check_config_mandatory_fields(config_data)
@@ -39,7 +36,7 @@ class ConfigChecker():
     def _check_fields_value_type(self, config_data:dict, type="base") -> bool:
         if type == "base":
             return self._check_fields_value_type_base(config_data)
-        elif type == "TimerActionListener":
+        elif type == "Timer":
             return self._check_fields_value_type_timer(config_data)
         else:
             raise Exception(f"Type {type} does not exist")

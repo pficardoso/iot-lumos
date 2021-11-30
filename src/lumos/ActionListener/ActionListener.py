@@ -12,6 +12,8 @@ logger = logging.getLogger("action_listener")
 
 class ActionListener(metaclass=abc.ABCMeta):
     """"""
+    type="Base"
+    name="Base"
 
     default_led_controller_port = 8000
     default_heartbeat_period = 660 #seconds
@@ -19,7 +21,6 @@ class ActionListener(metaclass=abc.ABCMeta):
 
     def __init__(self,):
         """Constructor for ActionListener"""
-        self.name = "ActionListener"
         self.id = None
         self.type = "ActionListener"
         self.led_controller_ip = None

@@ -9,11 +9,11 @@ logger = logging.getLogger("action_listener")
 
 class Timer(ActionListener):
     """"""
+    name = "Timer"
+    type = "Timer"
 
     def __init__(self,):
         ActionListener.__init__(self)
-        self.name = "Timer"
-        self.type = "Timer"
         """Constructor for Timer"""
 
     """
