@@ -14,6 +14,7 @@ class Timer(ActionListener):
 
     def __init__(self,):
         ActionListener.__init__(self)
+        self.timer_period = None
         """Constructor for Timer"""
 
     """
