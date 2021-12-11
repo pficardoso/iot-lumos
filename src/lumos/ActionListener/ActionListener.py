@@ -30,7 +30,6 @@ class ActionListener(metaclass=abc.ABCMeta):
         self._config_checker = ConfigChecker()
         self._heartbeat_period = None #seconds
         self._heartbeat_thread = None
-        self._detected_actions_queue = queue.Queue()
 
     """
     Setters/Loaders
@@ -67,14 +66,6 @@ class ActionListener(metaclass=abc.ABCMeta):
     def _config_specialized(self, config_data:dict) -> bool:
         pass
 
-    def _add_detected_action(self, action_name:str, action_param=None):
-        item = {"action":action_name}
-        if action_param:
-            if not isinstance(action_param, dict):
-                raise Exception(f"action_params should be a dict - {type(action_param)}  was given")
-            item["action_param"] = action_param
-
-        self._detected_actions_queue.put(item)
 
     """
     Getters
@@ -85,52 +76,40 @@ class ActionListener(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def _build_engine(self):
-        pass
-
-    @abc.abstractmethod
     def _start_engine(self):
         pass
 
     def _start_heartbeats_mechanism(self):
 
         def heartbeats_mechanism(period):
-            start_time = time.time()
-            while True:
-                current_time = time.time()
-                if (current_time - start_time) > period:
-                    logger.info("Sending heartbeat to led controller")
-                    start_time = current_time
-                    if self._check_connection_led_controller():
-                        logger.info("Heartbeat sent with success")
-                    else:
-                        logger.error("Heartbeat was sent unsuccessfully")
+           while True:
+                time.sleep(period)
+                logger.info("Sending heartbeat to led controller")
+                if self._check_connection_led_controller():
+                    logger.info("Heartbeat sent with success")
+                else:
+                    logger.error("Heartbeat was sent unsuccessfully")
 
 
         self._heartbeat_thread = threading.Thread(target=heartbeats_mechanism, args=(self._heartbeat_period,), daemon=True)
         self._heartbeat_thread.start()
 
-    def _start_process_actions_queue_mechanism(self):
+    def _send_detected_action(self, action_name, action_params=None):
 
-        def mechanism():
-            while True:
-                detected_action_item = self._detected_actions_queue.get()
-                self._send_detected_action(detected_action_item)
-                self._detected_actions_queue.task_done()
+        item = {"action": action_name}
+        if action_params:
+            if not isinstance(action_params, dict):
+                raise Exception(f"action_params should be a dict - {type(action_params)}  was given")
+        item["action_param"] = action_params
 
-        t = threading.Thread(target=mechanism)
-        t.start()
-
-
-    def _send_detected_action(self, item):
-        request_data = {}
+        request_data = dict()
         request_data["id"]=self.id
         request_data["listener_action"]=item["action"]
         target_url = f"http://{self.led_controller_ip}:{self.led_controller_port}/listener_request"
         r = requests.post(target_url,
                       data=json.dumps(request_data))
         logger.info(f"Send detected action to {target_url} with data {request_data}")
-        ## check response and report on log
+        ## TODO: check response and report on log
 
     def start(self):
 
@@ -144,10 +123,8 @@ class ActionListener(metaclass=abc.ABCMeta):
             logger.error(msg)
             raise Exception(msg)
 
-        self._build_engine()
         self._start_engine() #starts the thread of engine
         self._start_heartbeats_mechanism()
-        self._start_process_actions_queue_mechanism()
         logger.info(f"{self.name} started")
 
 
