@@ -1,0 +1,10 @@
+{
+  "action_listener": {
+    "id": "0e28903c2cbcbdd1b8c94ef8266dc3ebbf904299",
+    "type":  "HandClapDetector",
+    "led_controller_ip": "localhost",
+    "led_controller_port": "8000",
+    "model_artifact_path": "/workspace/personal/projects/hand.clap.detector.model/models.repo/model.tdnn.dir/model.tdnn",
+    "model_conf_path": "/workspace/personal/projects/hand.clap.detector.model/models.repo/model.tdnn.dir/model.tdnn.conf.json"
+  }
+}

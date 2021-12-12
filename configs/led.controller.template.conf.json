@@ -6,15 +6,15 @@
     },
     "listeners": {
       "window": {
-        "id":"d5db29cd03a2ed055086cef9c31c252b4587d6d0",
-        "type": "hand_clap_detector"
+        "id":"0e28903c2cbcbdd1b8c94ef8266dc3ebbf904299",
+        "type": "HandClapDetector"
       }
     },
     "listener_led_map": [
       {
         "listener": "window",
         "led": "window",
-        "listener_action": "two_clap_detected",
+        "listener_action": "clap_detected",
         "led_action": "toggle"
       }
     ],
