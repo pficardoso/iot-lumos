@@ -124,7 +124,7 @@ class LedController:
         error_message = f"Toggle message was not sent with success to led \"{led_name}\""
         try:
             url = f"http://{ip}/win&T=2"
-            response = requests.get(url)
+            response = requests.get(url, timeout=0.1)
             if response.status_code == 200:
                 logger.info(f"Toggle led \"{led_name}\" done with success")
             else:
