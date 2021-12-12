@@ -76,10 +76,10 @@ class ActionListener(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def _start_engine(self):
+    def _run_engine(self):
         pass
 
-    def _start_heartbeats_mechanism(self):
+    def _run_heartbeats_mechanism(self):
 
         def heartbeats_mechanism(period):
            while True:
@@ -106,9 +106,14 @@ class ActionListener(metaclass=abc.ABCMeta):
         request_data["id"]=self.id
         request_data["listener_action"]=item["action"]
         target_url = f"http://{self.led_controller_ip}:{self.led_controller_port}/listener_request"
-        r = requests.post(target_url,
-                      data=json.dumps(request_data))
-        logger.info(f"Send detected action to {target_url} with data {request_data}")
+        try:
+            r = requests.post(target_url,
+                              data=json.dumps(request_data),
+                              timeout=0.2)
+        except Exception as e:
+            logger.error(f"Error while doing request to led controller - Message error: {e}")
+        else:
+            logger.info(f"Send with success the detected action to {target_url} with data {request_data}")
         ## TODO: check response and report on log
 
     def start(self):
@@ -123,8 +128,8 @@ class ActionListener(metaclass=abc.ABCMeta):
             logger.error(msg)
             raise Exception(msg)
 
-        self._start_engine() #starts the thread of engine
-        self._start_heartbeats_mechanism()
+        self._run_engine() #starts the thread of engine
+        self._run_heartbeats_mechanism()
         logger.info(f"{self.name} started")
 
 
