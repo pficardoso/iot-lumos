@@ -36,7 +36,7 @@ class Timer(ActionListener):
     Workers
     """
 
-    def _start_engine(self):
+    def _run_engine(self):
         start_time = time.time()
         while True:
             current_time = time.time()
