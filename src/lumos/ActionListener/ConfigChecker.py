@@ -1,7 +1,10 @@
+import os.path
+
 class ConfigChecker():
 
     _mandatory_fields = ["id", "type", "led_controller_ip"]
     _mandatory_fields_timer = ["timer_period"]
+    _mandatory_fields_hand_clap_detect = ["model_artifact_path", "model_conf_path"]
 
     def __init__(self):
         self._mandatory_fields=None
@@ -11,6 +14,7 @@ class ConfigChecker():
 
         if type == "base": self.mandatory_fields = ConfigChecker._mandatory_fields
         elif type == "Timer": self.mandatory_fields = ConfigChecker._mandatory_fields_timer
+        elif type == "HandClapDetector": self.mandatory_fields = ConfigChecker._mandatory_fields_hand_clap_detect
         else: raise Exception(f"Type {type} does not exist")
 
         mandatory_check = self._check_config_mandatory_fields(config_data)
@@ -27,7 +31,6 @@ class ConfigChecker():
                 fields_not_exist.add(field)
                 check_flag = False
 
-
         if len(fields_not_exist) != 0:
             raise Exception(f"The following mandatory fields do not exist: {fields_not_exist}")
 
@@ -38,6 +41,8 @@ class ConfigChecker():
             return self._check_fields_value_type_base(config_data)
         elif type == "Timer":
             return self._check_fields_value_type_timer(config_data)
+        elif type == "HandClapDetector":
+            return self._check_fields_value_type_hand_clap_detector(config_data)
         else:
             raise Exception(f"Type {type} does not exist")
 
@@ -62,5 +67,16 @@ class ConfigChecker():
                 check_flag = False
                 raise Exception("The value of timer_period should be an int")
 
+        return check_flag
+
+    def _check_fields_value_type_hand_clap_detector(self, config_data: dict) -> bool:
+        check_flag = True
+        model_path = config_data["model_artifact_path"]
+        model_conf_path = config_data["model_conf_path"]
+        #TODO
+        #for path in [model_path, model_conf_path]:
+        #    if (not os.path.exists(path)) or (not os.path.isdir(path)):
+        #        check_flag = False
+        #        raise Exception(f"{path} does not exist or is not a file ")
         return check_flag
 
