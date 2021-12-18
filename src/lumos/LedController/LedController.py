@@ -1,5 +1,5 @@
 import logging
-import lumos.logger
+import src.lumos.logger
 import os
 import json
 import requests

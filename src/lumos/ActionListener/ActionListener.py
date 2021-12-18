@@ -1,9 +1,8 @@
 import abc
 import logging
 import json
-import queue
 import requests
-import lumos.logger
+import src.lumos.logger
 import threading
 import time
 from src.lumos.ActionListener.ConfigChecker import ConfigChecker
