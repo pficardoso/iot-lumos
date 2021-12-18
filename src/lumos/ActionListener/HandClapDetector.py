@@ -74,6 +74,8 @@ class HandClapDetector(ActionListener):
         self._audio_buffer = numpy.empty((0,1))
         self._segments_queue = queue.Queue()
         self._features_queue = queue.Queue()
+        self._detection_enabled = True
+        self._it_counter = 0
 
     """
     Setters/Loaders
@@ -129,6 +131,9 @@ class HandClapDetector(ActionListener):
     def get_segments_features(self):
         return self._features_queue.queue
 
+    def flush_segments_features(self):
+        self._features_queue.queue.clear()
+
     """
     Getters
     """
@@ -136,6 +141,7 @@ class HandClapDetector(ActionListener):
     """
     Workers
     """
+
     def _audio_receiver_callback(self, indata, frames, time, status):
         """This is called (from a separate thread) for each audio block."""
         if status:
@@ -155,18 +161,35 @@ class HandClapDetector(ActionListener):
         with self._audio_receiver:
             while True:
                 segment = self._segments_queue.get()
-                ## compute feature
-                self._ft_extractor.load_audio_signal(segment)
-                segment_features = self._ft_extractor.compute_features_by_config()
-                self.put_segment_features(segment_features)
-                features = self.get_segments_features()
-                prob = self._model.predict(features)
-                if prob >= 0.8:
-                    logger.info("Detected clap")
-                    self._send_detected_action("clap_detected")
+                if self._detection_is_enabled():
+                    ## compute feature
+                    self._ft_extractor.load_audio_signal(segment)
+                    segment_features = self._ft_extractor.compute_features_by_config()
+                    self.put_segment_features(segment_features)
+                    features = self.get_segments_features()
+                    prob = self._model.predict(features)
+                    if prob >= 0.8:
+                        logger.info("Detected clap")
+                        self._send_detected_action("clap_detected")
+                        self._detection_enabled = False
+                        self.flush_segments_features() ## these features are not going to be used anymore
+                        logger.info("Detection suspended after clap being detected")
+                else:
+                    self._it_counter+=1
+                    if self._it_counter == self._nr_segments:
+                        self._detection_enabled = True
+                        self._it_counter = 0
+                        logger.info("Detection reactivated")
+
+
+
+
+
     """
     Boolean methods
     """
+    def _detection_is_enabled(self):
+        return self._detection_enabled
 
     """
     Checkers
