@@ -2,7 +2,7 @@ import logging
 import src.lumos.logger
 import numpy
 from src.lumos.ActionListener.ActionListener import ActionListener
-from MAAP import AudioSignal, AudioFeatureExtractor
+from MAAP import AudioSignal, AudioFeatureExtractor, AudioReceiver
 from MAAP.utils import audio_feature_2_tensor
 import os
 import queue
@@ -63,7 +63,7 @@ class HandClapDetector(ActionListener):
         self._model_conf_path = None
         self._model        = Model()
         self._ft_extractor = AudioFeatureExtractor()
-        self._audio_receiver = sd.InputStream()
+        self._audio_receiver = AudioReceiver()
         self._nr_segments = 0
         self._segments_duration = 0
         self._nr_samples_per_segment = 0
@@ -72,7 +72,7 @@ class HandClapDetector(ActionListener):
         self._audio_fts_list = list()
         self._audio_fts_params = dict()
         self._audio_buffer = numpy.empty((0,1))
-        self._segments_queue = queue.Queue()
+        self._segments_queue = self._audio_receiver.outQueue
         self._features_queue = queue.Queue()
         self._detection_enabled = True
         self._it_counter = 0
@@ -115,11 +115,7 @@ class HandClapDetector(ActionListener):
         audio_device_info = sd.query_devices(audio_device_id, "input")
 
         self._sample_rate = audio_device_info["default_samplerate"]
-        self._nr_samples_per_segment = int(self._sample_rate*self._segments_duration)
-        self._audio_receiver = sd.InputStream(samplerate=self._sample_rate,
-                                              device=audio_device_id,
-                                              channels=1,
-                                              callback=self._audio_receiver_callback)
+        self._audio_receiver.config_capture(self._segments_duration)
 
         return all([model_config_check_flag, config_check_flag])
 
@@ -141,21 +137,6 @@ class HandClapDetector(ActionListener):
     """
     Workers
     """
-
-    def _audio_receiver_callback(self, indata, frames, time, status):
-        """This is called (from a separate thread) for each audio block."""
-        if status:
-            print(status, file=sys.stderr)
-        self._audio_buffer = numpy.concatenate((self._audio_buffer, indata), axis=0)
-        if self._audio_buffer.shape[0] > self._nr_samples_per_segment:
-            y, new_buffer = numpy.split(self._audio_buffer, [self._nr_samples_per_segment], axis=0)
-            signal = AudioSignal(y[:, 0], sample_rate=self._sample_rate)
-            self._segments_queue.put(signal)
-            self._audio_buffer = np.copy(new_buffer)
-        else:
-            pass
-
-
     def _run_engine(self):
         print("Listening and Predicting...")
         with self._audio_receiver:
@@ -180,10 +161,6 @@ class HandClapDetector(ActionListener):
                         self._detection_enabled = True
                         self._it_counter = 0
                         logger.info("Detection reactivated")
-
-
-
-
 
     """
     Boolean methods
