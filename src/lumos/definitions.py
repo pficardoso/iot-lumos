@@ -1,6 +1,28 @@
 import os
 
-ROOT_DIR = "/".join(__file__.split("/")[0:-3])
-CONF_DIR = os.path.join(ROOT_DIR, "configs")
-LOG_DIR = os.path.join(ROOT_DIR, "logs")
-MODELS_DIR = os.path.join(ROOT_DIR, "models")
+
+class SingletonMeta(type):
+    """
+    src: https://refactoring.guru/design-patterns/singleton/python/example
+    """
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """
+        Possible changes to the value of the `__init__` argument do not affect
+        the returned instance.
+        """
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class Definitions(metaclass=SingletonMeta):
+
+    def __init__(self):
+        self.root_dir   = "/".join(__file__.split("/")[0:-3])
+        self.conf_dir   = os.path.join(self.root_dir, "configs")
+        self.log_dir    = os.path.join(self.root_dir, "logs")
+        self.models_dir = os.path.join(self.root_dir, "models")
