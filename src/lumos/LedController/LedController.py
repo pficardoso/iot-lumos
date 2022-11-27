@@ -4,6 +4,9 @@ import os
 import json
 import requests
 from src.lumos.LedController.ConfigChecker import ConfigChecker
+from src.lumos.definitions import Definitions
+
+definitions = Definitions()
 
 logger = logging.getLogger("led_controller")
 
@@ -115,13 +118,15 @@ class LedController:
     def toggle_led(self, led_name):
 
         logger.info(f"Received a request to toggle led with name {led_name}")
-        if led_name not in self._leds.keys():
-            logger.error(f"Led with \"{led_name}\" is not configured in LedController")
+        error_message = f"Toggle message was not sent with success to led \"{led_name}\""
+
+        if not self._check_led_exists(led_name):
+            logger.error(error_message)
+            return
 
         ip = self._leds[led_name]
         logger.info(f"Sending toggle message to led \"{led_name}\", with ip {ip}")
 
-        error_message = f"Toggle message was not sent with success to led \"{led_name}\""
         try:
             url = f"http://{ip}/win&T=2"
             response = requests.get(url, timeout=0.1)
@@ -133,6 +138,37 @@ class LedController:
             logger.error(error_message)
 
         return
+
+    @led_action("change_rel_brightness")
+    def change_led_rel_brightness(self, led_name, mode="increase"):
+
+        error_message = f"Change rel brightness message was not sent with success to led \"{led_name}\""
+        if not self._check_led_exists(led_name):
+            logger.error(error_message)
+            return
+
+        ip = self._leds[led_name]
+
+        if mode=="increase":
+            logger.info(f"Sending `increase brightness` message to led \"{led_name}\", with ip {ip}")
+            parameter = "~" + str(definitions.led_brigthness_step)
+        elif mode=="decrease":
+            logger.info(f"Sending `decrease brightness` message to led \"{led_name}\", with ip {ip}")
+            parameter = "~-" + str(definitions.led_brigthness_step)
+        else:
+            logger.error(f"Mode {mode} is not available in change relative brightness operation")
+            logger.error(error_message)
+            return
+
+        try:
+            url = f"http://{ip}/win&A={parameter}"
+            response = requests.get(url, timeout=0.2)
+            if response.status_code == 200:
+                logger.info(f"Change brightness on led \"{led_name}\" done with success")
+            else:
+                logger.error(error_message)
+        except:
+            logger.error(error_message)
 
     def interpret_request(self, request_data: dict):
 
@@ -192,6 +228,11 @@ class LedController:
     """
     Checkers
     """
+    def _check_led_exists(self, led_name, log=True):
+        exists = bool(led_name in self._leds.keys())
+        if (not exists) and (log):
+            logger.error(f"Led with \"{led_name}\" is not configured in LedController")
+        return exists
 
     """
     Util methods / Static methods

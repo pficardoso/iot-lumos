@@ -26,3 +26,5 @@ class Definitions(metaclass=SingletonMeta):
         self.conf_dir   = os.path.join(self.root_dir, "configs")
         self.log_dir    = os.path.join(self.root_dir, "logs")
         self.models_dir = os.path.join(self.root_dir, "models")
+
+        self.led_brigthness_step = int(255/10)
