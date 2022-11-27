@@ -1,6 +1,6 @@
-from src.lumos.ActionListener.Timer import Timer
-from src.lumos.ActionListener.HandClapDetector import HandClapDetector
-from src.lumos.ActionListener.ActionListener import ActionListener
+from lumos.ActionListener.Timer import Timer
+from lumos.ActionListener.HandClapDetector import HandClapDetector
+from lumos.ActionListener.ActionListener import ActionListener
 
 class ActionListerCatalog():
 

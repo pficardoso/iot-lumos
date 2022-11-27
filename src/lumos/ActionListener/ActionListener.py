@@ -2,10 +2,10 @@ import abc
 import logging
 import json
 import requests
-import src.lumos.logger
+import lumos.logger
 import threading
 import time
-from src.lumos.ActionListener.ConfigChecker import ConfigChecker
+from lumos.ActionListener.ConfigChecker import ConfigChecker
 
 logger = logging.getLogger("action_listener")
 

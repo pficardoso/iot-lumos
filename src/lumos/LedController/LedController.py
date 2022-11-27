@@ -1,10 +1,10 @@
 import logging
-import src.lumos.logger
+import lumos.logger
 import os
 import json
 import requests
-from src.lumos.LedController.ConfigChecker import ConfigChecker
-from src.lumos.definitions import Definitions
+from lumos.LedController.ConfigChecker import ConfigChecker
+from lumos.definitions import Definitions
 
 definitions = Definitions()
 

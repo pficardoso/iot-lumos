@@ -1,4 +1,4 @@
-from src.lumos.LedController import start_led_controller_web_service
+from lumos.LedController import start_led_controller_web_service
 from argparse import ArgumentParser
 import os
 

@@ -1,4 +1,4 @@
-from src.lumos.ActionListener import ActionListerCatalog
+from lumos.ActionListener import ActionListerCatalog
 from argparse import ArgumentParser
 import os
 

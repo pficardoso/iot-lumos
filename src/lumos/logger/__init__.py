@@ -1,1 +1,1 @@
-from src.lumos.logger import logger
+from lumos.logger import logger

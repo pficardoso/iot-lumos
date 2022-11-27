@@ -3,7 +3,7 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.web import Application
 from tornado.web import RequestHandler
-from src.lumos.LedController import led_controller
+from lumos.LedController import led_controller
 import logging
 import json
 

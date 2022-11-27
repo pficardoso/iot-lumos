@@ -3,7 +3,7 @@ import os
 
 class SingletonMeta(type):
     """
-    src: https://refactoring.guru/design-patterns/singleton/python/example
+     https://refactoring.guru/design-patterns/singleton/python/example
     """
 
     _instances = {}

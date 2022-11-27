@@ -1,4 +1,4 @@
-from src.lumos.definitions import Definitions
+from lumos.definitions import Definitions
 import os
 import logging.config
 

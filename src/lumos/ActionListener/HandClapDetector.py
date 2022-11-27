@@ -1,7 +1,7 @@
 import logging
-import src.lumos.logger
+import lumos.logger
 import numpy
-from src.lumos.ActionListener.ActionListener import ActionListener
+from lumos.ActionListener.ActionListener import ActionListener
 from MAAP import AudioSignal, AudioFeatureExtractor, AudioReceiver
 from MAAP.utils import audio_feature_2_tensor
 import os

@@ -1,8 +1,8 @@
 import threading
 import time
 import logging
-import src.lumos.logger
-from src.lumos.ActionListener.ActionListener import ActionListener
+import lumos.logger
+from lumos.ActionListener.ActionListener import ActionListener
 
 logger = logging.getLogger("action_listener")
 
