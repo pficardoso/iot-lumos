@@ -1,9 +1,9 @@
-from lumos.ActionListener import ActionListerCatalog
 from argparse import ArgumentParser
-import os
+
+from lumos.ActionListener import ActionListerCatalog
 
 parser = ArgumentParser()
-parser.add_argument("-c","--config", help="Config file of led controller")
+parser.add_argument("-c", "--config", help="Config file of led controller")
 
 args = parser.parse_args()
 action_listener = ActionListerCatalog().get_action_listener("Timer")
