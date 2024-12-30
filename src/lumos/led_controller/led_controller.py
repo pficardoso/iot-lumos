@@ -5,7 +5,7 @@ import os
 import requests
 
 from lumos.definitions import Definitions
-from lumos.LedController.ConfigChecker import ConfigChecker
+from lumos.led_controller.config_checker import ConfigChecker
 
 definitions = Definitions()
 

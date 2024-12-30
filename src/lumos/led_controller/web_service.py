@@ -5,7 +5,7 @@ import tornado
 from tornado.httpserver import HTTPServer
 from tornado.web import RequestHandler
 
-from lumos.LedController import led_controller
+from lumos.led_controller import led_controller
 
 logger = logging.getLogger("led_controller")
 

@@ -1,7 +1,7 @@
 import logging
 import time
 
-from lumos.ActionListener.ActionListener import ActionListener
+from lumos.action_listener.action_listener import ActionListener
 
 logger = logging.getLogger("action_listener")
 

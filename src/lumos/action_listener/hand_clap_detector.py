@@ -10,7 +10,7 @@ import tensorflow.keras as K
 from MAAP import AudioFeatureExtractor, AudioReceiver
 from MAAP.utils import audio_feature_2_tensor
 
-from lumos.ActionListener.ActionListener import ActionListener
+from lumos.action_listener.action_listener import ActionListener
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 logger = logging.getLogger("action_listener")

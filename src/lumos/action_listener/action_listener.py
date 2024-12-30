@@ -6,7 +6,7 @@ import time
 
 import requests
 
-from lumos.ActionListener.ConfigChecker import ConfigChecker
+from lumos.action_listener.config_checker import ConfigChecker
 
 logger = logging.getLogger("action_listener")
 

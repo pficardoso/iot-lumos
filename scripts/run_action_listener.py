@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from lumos.ActionListener import ActionListerCatalog
+from lumos.action_listener import ActionListerCatalog
 
 parser = ArgumentParser()
 parser.add_argument("-c", "--config", help="Config file of led controller")
