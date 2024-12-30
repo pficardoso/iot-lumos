@@ -1,7 +1,6 @@
-import threading
-import time
 import logging
-import lumos.logger
+import time
+
 from lumos.ActionListener.ActionListener import ActionListener
 
 logger = logging.getLogger("action_listener")
@@ -9,10 +8,13 @@ logger = logging.getLogger("action_listener")
 
 class Timer(ActionListener):
     """"""
+
     name = "Timer"
     type = "Timer"
 
-    def __init__(self,):
+    def __init__(
+        self,
+    ):
         ActionListener.__init__(self)
         self.timer_period = None
         """Constructor for Timer"""
@@ -20,9 +22,11 @@ class Timer(ActionListener):
     """
     Setters/Loaders
     """
-    def _config_specialized(self, config_data:dict) -> bool:
 
-        config_check_flag = self._config_checker.check_config_data(config_data, self.type)
+    def _config_specialized(self, config_data: dict) -> bool:
+        config_check_flag = self._config_checker.check_config_data(
+            config_data, self.type
+        )
         self.timer_period = int(config_data["timer_period"])
         logger.info(f"Configured with time period of {self.timer_period} seconds")
 
@@ -57,4 +61,3 @@ class Timer(ActionListener):
     """
     Util methods / Static methods
     """
-

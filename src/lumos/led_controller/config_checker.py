@@ -1,15 +1,11 @@
-
-
-
-class ConfigChecker():
-
+class ConfigChecker:
     def __init__(self):
         pass
 
-
-    def check_config_data(self, config_data:dict):
-        # IMPROVEMENT: Break this function into steps. Consider to pass this logic to a new class, allowing the
-        #    code reusability in other classes that require this logic during their configuration
+    def check_config_data(self, config_data: dict):
+        # IMPROVEMENT: Break this function into steps. Consider to pass this
+        # logic to a new class, allowing the code reusability in other classes
+        # that require this logic during their configuration
 
         valid = True
 
@@ -31,15 +27,12 @@ class ConfigChecker():
         # TODO: check if there are not collisions between mapping of led and listeners.
         #   Consider if you want to avoid this and launch Exception or just to launch a warning
 
-        return (valid and led_valid and listener_valid and map_valid )
+        return valid and led_valid and listener_valid and map_valid
 
-
-    def check_config_leds_field(self, config_data_leds:dict):
-
+    def check_config_leds_field(self, config_data_leds: dict):
         valid = True
         led_names, led_ips, repeated_names, repeated_ips = set(), set(), set(), set()
         for led_name, led_ip in config_data_leds.items():
-
             if led_ip in led_ips:
                 repeated_ips.add(led_ip)
                 valid = False
@@ -53,22 +46,23 @@ class ConfigChecker():
                 led_names.add(led_name)
 
         if len(repeated_names) != 0:
-            raise Exception(f"Field leds has the following names repeated: {repeated_names}")
+            raise Exception(
+                f"Field leds has the following names repeated: {repeated_names}"
+            )
         if len(repeated_ips) != 0:
-            raise Exception(f"Field leds has the following ips repeated: {repeated_ips}")
+            raise Exception(
+                f"Field leds has the following ips repeated: {repeated_ips}"
+            )
 
         return valid
 
-
-    def check_config_listeners_field(self, config_data_listeners:dict):
-
+    def check_config_listeners_field(self, config_data_listeners: dict):
         MANDATORY_FIELDS = ["id", "type"]
 
         valid = True
         names, ids, repeated_names, repeated_ids = set(), set(), set(), set()
 
         for name, listener_config in config_data_listeners.items():
-
             # check if all mandatory fields exist
             missing_fields = MANDATORY_FIELDS.copy()
             for field in MANDATORY_FIELDS:
@@ -93,14 +87,17 @@ class ConfigChecker():
                 ids.add(id)
 
         if len(repeated_names) != 0:
-            raise Exception(f"Field listeners has the following names repeated: {repeated_names}")
+            raise Exception(
+                f"Field listeners has the following names repeated: {repeated_names}"
+            )
         if len(repeated_ids) != 0:
-            raise Exception(f"Field listeners has the following ips repeated: {repeated_ids}")
+            raise Exception(
+                f"Field listeners has the following ips repeated: {repeated_ids}"
+            )
 
         return valid
 
-    def check_config_listeners_led_map(self, config_data:dict):
-
+    def check_config_listeners_led_map(self, config_data: dict):
         valid = True
         wrong_led, wrong_listener = set(), set()
         for map_dict in config_data["listener_led_map"]:
@@ -112,8 +109,12 @@ class ConfigChecker():
                 wrong_listener.add(map_dict["listener"])
 
         if len(wrong_led) != 0:
-            raise Exception(f"The following leds are not present in config file: ids {wrong_led}")
+            raise Exception(
+                f"The following leds are not present in config file: ids {wrong_led}"
+            )
         if len(wrong_listener) != 0:
-            raise Exception(f"The following listeners are not present in config file: ids {wrong_listener}")
+            raise Exception(
+                f"The following listeners are not present in config file: ids {wrong_listener}"
+            )
 
         return valid

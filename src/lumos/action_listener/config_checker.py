@@ -1,18 +1,12 @@
-import os.path
-
-
 class ConfigChecker:
-
     _mandatory_fields = ["id", "type", "led_controller_ip"]
     _mandatory_fields_timer = ["timer_period"]
     _mandatory_fields_hand_clap_detect = ["model_artifact_path", "model_conf_path"]
 
     def __init__(self):
         self._mandatory_fields = None
-        pass
 
     def check_config_data(self, config_data: dict, type="base"):
-
         if type == "base":
             self.mandatory_fields = ConfigChecker._mandatory_fields
         elif type == "Timer":
@@ -28,7 +22,6 @@ class ConfigChecker:
         return mandatory_check and fields_value_types_check
 
     def _check_config_mandatory_fields(self, config_data: dict, type="base") -> bool:
-
         check_flag = True
         fields_not_exist = set()
         for field in self.mandatory_fields:
@@ -54,11 +47,10 @@ class ConfigChecker:
             raise Exception(f"Type {type} does not exist")
 
     def _check_fields_value_type_base(self, config_data: dict) -> bool:
-
         check_flag = True
         if "led_controller_port" in config_data:
             try:
-                value = int(config_data["led_controller_port"])
+                int(config_data["led_controller_port"])
             except ValueError:
                 check_flag = False
                 raise Exception("The value of led_controller_port should be an int")
@@ -69,7 +61,7 @@ class ConfigChecker:
         check_flag = True
         if "timer_period" in config_data:
             try:
-                value = int(config_data["timer_period"])
+                int(config_data["timer_period"])
             except ValueError:
                 check_flag = False
                 raise Exception("The value of timer_period should be an int")
@@ -78,8 +70,8 @@ class ConfigChecker:
 
     def _check_fields_value_type_hand_clap_detector(self, config_data: dict) -> bool:
         check_flag = True
-        model_path = config_data["model_artifact_path"]
-        model_conf_path = config_data["model_conf_path"]
+        config_data["model_artifact_path"]
+        config_data["model_conf_path"]
         # TODO
         # for path in [model_path, model_conf_path]:
         #    if (not os.path.exists(path)) or (not os.path.isdir(path)):

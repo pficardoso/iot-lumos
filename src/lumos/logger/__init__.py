@@ -1,1 +1,1 @@
-from lumos.logger import logger
+from lumos.logger import logger  # noqa: F401

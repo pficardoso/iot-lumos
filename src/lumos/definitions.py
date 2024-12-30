@@ -3,7 +3,7 @@ import os
 
 class SingletonMeta(type):
     """
-     https://refactoring.guru/design-patterns/singleton/python/example
+    https://refactoring.guru/design-patterns/singleton/python/example
     """
 
     _instances = {}
@@ -20,11 +20,10 @@ class SingletonMeta(type):
 
 
 class Definitions(metaclass=SingletonMeta):
-
     def __init__(self):
-        self.root_dir   = "/".join(__file__.split("/")[0:-3])
-        self.conf_dir   = os.path.join(self.root_dir, "configs")
-        self.log_dir    = os.path.join(self.root_dir, "logs")
+        self.root_dir = "/".join(__file__.split("/")[0:-3])
+        self.conf_dir = os.path.join(self.root_dir, "configs")
+        self.log_dir = os.path.join(self.root_dir, "logs")
         self.models_dir = os.path.join(self.root_dir, "models")
 
-        self.led_brigthness_step = int(255/10)
+        self.led_brigthness_step = int(255 / 10)

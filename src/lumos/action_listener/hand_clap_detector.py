@@ -1,22 +1,22 @@
+import json
 import logging
-import lumos.logger
-import numpy
-from lumos.ActionListener.ActionListener import ActionListener
-from MAAP import AudioSignal, AudioFeatureExtractor, AudioReceiver
-from MAAP.utils import audio_feature_2_tensor
 import os
 import queue
+
+import numpy
 import numpy as np
-import json
-import tensorflow.keras as K
 import sounddevice as sd
-import sys
+import tensorflow.keras as K
+from MAAP import AudioFeatureExtractor, AudioReceiver
+from MAAP.utils import audio_feature_2_tensor
+
+from lumos.ActionListener.ActionListener import ActionListener
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 logger = logging.getLogger("action_listener")
 
-class Model():
 
+class Model:
     def __init__(self):
         self.model_path = None
         self.model = None
@@ -36,12 +36,11 @@ class Model():
         return len(self.tensors) == self.nr_segments
 
     def predict(self, segments_features):
-
         prob_prediction = 0
         if len(segments_features) == self.nr_segments:
             tensors = list()
             for s_ft in segments_features:
-                tensor = audio_feature_2_tensor(s_ft,ndim=self.tensor_ndim)
+                tensor = audio_feature_2_tensor(s_ft, ndim=self.tensor_ndim)
                 tensors.append(tensor)
 
             # obtain the input of the model
@@ -53,15 +52,18 @@ class Model():
 
 class HandClapDetector(ActionListener):
     """"""
+
     name = "HandClapDetector"
     type = "HandClapDetector"
 
-    def __init__(self,):
+    def __init__(
+        self,
+    ):
         """Constructor for HandClapDetector"""
         ActionListener.__init__(self)
-        self._model_art_path  = None
+        self._model_art_path = None
         self._model_conf_path = None
-        self._model        = Model()
+        self._model = Model()
         self._ft_extractor = AudioFeatureExtractor()
         self._audio_receiver = AudioReceiver()
         self._nr_segments = 0
@@ -71,7 +73,7 @@ class HandClapDetector(ActionListener):
         self._model_input_ndim = 0
         self._audio_fts_list = list()
         self._audio_fts_params = dict()
-        self._audio_buffer = numpy.empty((0,1))
+        self._audio_buffer = numpy.empty((0, 1))
         self._segments_queue = self._audio_receiver.outQueue
         self._features_queue = queue.Queue()
         self._detection_enabled = True
@@ -80,22 +82,31 @@ class HandClapDetector(ActionListener):
     """
     Setters/Loaders
     """
-    def _config_specialized(self, config_data:dict) -> bool:
-        config_check_flag = self._config_checker.check_config_data(config_data, self.type)
+
+    def _config_specialized(self, config_data: dict) -> bool:
+        config_check_flag = self._config_checker.check_config_data(
+            config_data, self.type
+        )
         self._model_art_path = config_data["model_artifact_path"]
-        self._model_conf_path     = config_data["model_conf_path"]
+        self._model_conf_path = config_data["model_conf_path"]
 
-        logger.info(f"Configured with {self.name} with model {self._model_art_path}, using the configuration defined in"
-                    f"{self._model_conf_path}")
+        logger.info(
+            f"Configured with {self.name} with model {self._model_art_path},"
+            f"using the configuration defined in {self._model_conf_path}"
+        )
 
-        model_config_check_flag = self._check_model_config_data() #TODO: this function always return True
+        model_config_check_flag = (
+            self._check_model_config_data()
+        )  # TODO: this function always return True
         if not model_config_check_flag:
-            raise Exception(f"Model config data in {os.path.realpath(self._model_conf_path)} is not valid")
+            raise Exception(
+                f"Model config data in {os.path.realpath(self._model_conf_path)} is not valid"
+            )
 
-        with open(self._model_conf_path, "r") as json_file:
+        with open(self._model_conf_path) as json_file:
             confs = json.load(json_file)
 
-        self._nr_segments       = confs["model"]["audio_params"]["nr_segments"]
+        self._nr_segments = confs["model"]["audio_params"]["nr_segments"]
         self._segments_duration = confs["model"]["audio_params"]["segment_duration"]
         self._features_queue = queue.Queue(maxsize=self._nr_segments)
 
@@ -104,12 +115,15 @@ class HandClapDetector(ActionListener):
         else:
             self._model_input_ndim = 1
 
-        self._audio_fts_list    = confs["maap_audio_feature_extractor"]["features"]
-        self._audio_fts_params  = confs["maap_audio_feature_extractor"]["features_func_args"]
-
+        self._audio_fts_list = confs["maap_audio_feature_extractor"]["features"]
+        self._audio_fts_params = confs["maap_audio_feature_extractor"][
+            "features_func_args"
+        ]
 
         self._ft_extractor.config(self._audio_fts_list, **self._audio_fts_params)
-        self._model.config(self._model_art_path, self._nr_segments, self._model_input_ndim)
+        self._model.config(
+            self._model_art_path, self._nr_segments, self._model_input_ndim
+        )
 
         audio_device_id = sd.default.device[0]
         audio_device_info = sd.query_devices(audio_device_id, "input")
@@ -137,13 +151,14 @@ class HandClapDetector(ActionListener):
     """
     Workers
     """
+
     def _run_engine(self):
         print("Listening and Predicting...")
         with self._audio_receiver:
             while True:
                 segment = self._segments_queue.get()
                 if self._detection_is_enabled():
-                    ## compute feature
+                    # compute feature
                     self._ft_extractor.load_audio_signal(segment)
                     segment_features = self._ft_extractor.compute_features_by_config()
                     self.put_segment_features(segment_features)
@@ -153,10 +168,11 @@ class HandClapDetector(ActionListener):
                         logger.info("Detected clap")
                         self._send_detected_action("clap_detected")
                         self._detection_enabled = False
-                        self.flush_segments_features() ## these features are not going to be used anymore
+                        # these features are not going to be used anymore
+                        self.flush_segments_features()
                         logger.info("Detection suspended after clap being detected")
                 else:
-                    self._it_counter+=1
+                    self._it_counter += 1
                     if self._it_counter == self._nr_segments:
                         self._detection_enabled = True
                         self._it_counter = 0
@@ -165,18 +181,19 @@ class HandClapDetector(ActionListener):
     """
     Boolean methods
     """
+
     def _detection_is_enabled(self):
         return self._detection_enabled
 
     """
     Checkers
     """
+
     def _check_model_config_data(self):
-        #TODO: to improve
+        # TODO: to improve
         # acess self._model_conf_path
         return True
 
     """
     Util methods / Static methods
     """
-
