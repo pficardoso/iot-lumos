@@ -1,6 +1,8 @@
 import argparse
 import importlib
 
+import lumos.logger  # noqa: F401
+
 
 def main():
     parser = argparse.ArgumentParser(description="Lumos")
