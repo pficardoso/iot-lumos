@@ -6,36 +6,39 @@ from tornado.httpserver import HTTPServer
 from tornado.web import RequestHandler
 
 from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
-from lumos.led_controller import led_controller
+from lumos.led_controller.led_controller import LedController
 
 logger = logging.getLogger("led_controller")
+
+
+led_controller_obj = LedController()
 
 
 class ListenerRequestHandler(RequestHandler):
     def post(self):
         logger.info(
-            "WebService: received a POST request in Listener Request endpoint. Processing..."
+            "HttpService: received a POST request in Listener Request endpoint. Processing..."
         )
 
         request_success = False
         try:
             request_data = json.loads(self.request.body)
         except Exception:
-            logger.error("WebService: could not fetch data from request body")
+            logger.error("HttpService: could not fetch data from request body")
             request_success = False
 
         data = DetectedActionMessage(**request_data)
-        request_success = led_controller.interpret_request(data)
+        request_success = led_controller_obj.interpret_request(data)
 
         if request_success:
             logger.info(
-                "WebService: the POST request received in Listener Request"
+                "HttpService: the POST request received in Listener Request"
                 "endpoint was done successfully"
             )
             self.set_status(200)
         else:
             logger.info(
-                "WebService: the POST request received in Listener"
+                "HttpService: the POST request received in Listener"
                 "Request endpoint was done unsuccessfully"
             )
             self.set_status(400)
@@ -44,26 +47,26 @@ class ListenerRequestHandler(RequestHandler):
 class ListenerHeartbeatHandler(RequestHandler):
     def post(self):
         logger.info(
-            "WebService: received a POST request in  Listener Heartbeat endpoint. Processing..."
+            "HttpService: received a POST request in  Listener Heartbeat endpoint. Processing..."
         )
 
         try:
             request_data = json.loads(self.request.body)
         except Exception:
-            logger.error("WebService: could not fetch data from request body")
+            logger.error("HttpService: could not fetch data from request body")
             self.set_status(400)
 
         data = ListenerHeartbeatMessage(**request_data)
-        led_controller.interpret_heartbeat(data)
+        led_controller_obj.interpret_heartbeat(data)
 
         logger.info(
-            "WebService: the POST request received in Listener Heartbeat"
+            "HttpService: the POST request received in Listener Heartbeat"
             "endpoint was done successfully"
         )
         self.set_status(200)
 
 
-class WebService:
+class HttpService:
     def __init__(self, port=8000):
         self._app = tornado.web.Application(
             [
@@ -79,6 +82,13 @@ class WebService:
         http_server.listen(self._port)
         print("Listening on http://localhost:%i" % self._port)
         logger.info(
-            f"Starting web service of LedController. Listening on http://localhost:{self._port}'"
+            "Starting http web service of LedController."
+            f"Listening on http://localhost:{self._port}"
         )
         tornado.ioloop.IOLoop.current().start()
+
+
+def start_led_controller_http_service(config_file=None):
+    led_controller_obj.config(config_file)
+    web_service = HttpService()
+    web_service.start()

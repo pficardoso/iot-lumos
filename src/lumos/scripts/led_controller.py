@@ -11,6 +11,6 @@ def add_arguments(parser: ArgumentParser):
 
 
 def run(args):
-    from lumos.led_controller import start_led_controller_web_service
+    from lumos.led_controller.http_service import start_led_controller_http_service
 
-    start_led_controller_web_service(args.config)
+    start_led_controller_http_service(args.config)
