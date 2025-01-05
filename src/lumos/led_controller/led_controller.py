@@ -4,6 +4,7 @@ import os
 
 import requests
 
+from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
 from lumos.definitions import Definitions
 from lumos.led_controller.config_checker import ConfigChecker
 
@@ -196,16 +197,12 @@ class LedController:
         except Exception:
             logger.error(error_message)
 
-    def interpret_request(self, request_data: dict):
+    def interpret_request(self, data: DetectedActionMessage):
         logger.info(
             "Interpreting a request made by a listener: resolving listener identification..."
         )
 
-        if "id" not in request_data:
-            logger.error("Impossible to make listener identification, id was not given")
-            return False
-        source_id = request_data["id"]
-
+        source_id = data.listener_id
         source_listener_name = self.get_listener_name_by_id(source_id)
         if source_listener_name is None:
             logger.error(
@@ -218,13 +215,7 @@ class LedController:
             f"Interpreting request made by listener '{source_listener_name}' with id '{source_id}'"
         )
 
-        if "listener_action" not in request_data:
-            logger.error(
-                "Impossible to interpret_request, listener_action was not given in request"
-            )
-            return False
-
-        listener_action = request_data["listener_action"]
+        listener_action = data.action_detected
         led_name, led_action, map_success = self.get_led_and_action_through_mapping(
             source_listener_name, listener_action
         )
@@ -244,17 +235,12 @@ class LedController:
         led_action_function_to_trigger(self, led_name)
         return True
 
-    def interpret_heartbeat(self, request_data: dict):
+    def interpret_heartbeat(self, data: ListenerHeartbeatMessage):
         logger.info(
             "Interpreting an heartbeat received by a listener:"
             "resolving listener identification..."
         )
-
-        if "id" not in request_data:
-            logger.error("Impossible to make listener identification, id was not given")
-            return False
-        source_id = request_data["id"]
-
+        source_id = data.listener_id
         source_listener_name = self.get_listener_name_by_id(source_id)
         if source_listener_name is None:
             logger.error(

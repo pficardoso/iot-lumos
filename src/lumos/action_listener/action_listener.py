@@ -1,4 +1,5 @@
 import abc
+import dataclasses
 import json
 import logging
 import threading
@@ -7,6 +8,7 @@ import time
 import requests
 
 from lumos.action_listener.config_checker import ConfigChecker
+from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
 
 logger = logging.getLogger("action_listener")
 
@@ -103,30 +105,33 @@ class ActionListener(metaclass=abc.ABCMeta):
         )
         self._heartbeat_thread.start()
 
-    def _send_detected_action(self, action_name, action_params=None):
-        item = {"action": action_name}
-        if action_params:
-            if not isinstance(action_params, dict):
+    def _send_detected_action(self, action_name, action_data=None):
+        if action_data:
+            if not isinstance(action_data, dict):
                 raise Exception(
-                    f"action_params should be a dict - {type(action_params)}  was given"
+                    f"action_params should be a dict - {type(action_data)}  was given"
                 )
-        item["action_param"] = action_params
-
-        request_data = dict()
-        request_data["id"] = self.id
-        request_data["listener_action"] = item["action"]
+        message = DetectedActionMessage(
+            listener_id=self.id,
+            listener_name=self.name,
+            listener_type=self.type,
+            action_detected=action_name,
+            action_data=action_data if action_data else None,
+        )
         target_url = f"http://{self.led_controller_ip}:{self.led_controller_port}/listener_request"
         try:
-            requests.post(target_url, data=json.dumps(request_data), timeout=0.2)
+            requests.post(
+                target_url, data=json.dumps(dataclasses.asdict(message)), timeout=0.2
+            )
         except Exception as e:
             logger.error(
                 f"Error while doing request to led controller - Message error: {e}"
             )
         else:
             logger.info(
-                f"Send with success the detected action to {target_url} with data {request_data}"
+                f"Send with success the detected action to {target_url} \
+                with data {dataclasses.asdict(message)}"
             )
-        # TODO: check response and report on log
 
     def start(self):
         logger.info(f"Starting {self.name}...")
@@ -136,7 +141,7 @@ class ActionListener(metaclass=abc.ABCMeta):
 
         if not self._check_connection_led_controller():
             msg = (
-                "Could not connect with led controller, with ip address"
+                "Could not connect with led controller, with ip address "
                 f"{self.led_controller_ip}"
             )
             logger.error(msg)
@@ -155,11 +160,12 @@ class ActionListener(metaclass=abc.ABCMeta):
     """
 
     def _check_connection_led_controller(self):
-        data = {"id": self.id}
+        message = ListenerHeartbeatMessage(listener_id=self.id)
 
         try:
             response = requests.post(
-                self.led_controller_heartbeat_url, data=json.dumps(data)
+                self.led_controller_heartbeat_url,
+                data=json.dumps(dataclasses.asdict(message)),
             )
         except requests.exceptions.ConnectionError:
             return False

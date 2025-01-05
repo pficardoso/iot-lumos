@@ -5,6 +5,7 @@ import tornado
 from tornado.httpserver import HTTPServer
 from tornado.web import RequestHandler
 
+from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
 from lumos.led_controller import led_controller
 
 logger = logging.getLogger("led_controller")
@@ -23,7 +24,8 @@ class ListenerRequestHandler(RequestHandler):
             logger.error("WebService: could not fetch data from request body")
             request_success = False
 
-        request_success = led_controller.interpret_request(request_data)
+        data = DetectedActionMessage(**request_data)
+        request_success = led_controller.interpret_request(data)
 
         if request_success:
             logger.info(
@@ -51,7 +53,8 @@ class ListenerHeartbeatHandler(RequestHandler):
             logger.error("WebService: could not fetch data from request body")
             self.set_status(400)
 
-        led_controller.interpret_heartbeat(request_data)
+        data = ListenerHeartbeatMessage(**request_data)
+        led_controller.interpret_heartbeat(data)
 
         logger.info(
             "WebService: the POST request received in Listener Heartbeat"
