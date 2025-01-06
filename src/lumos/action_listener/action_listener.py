@@ -13,6 +13,48 @@ from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessag
 logger = logging.getLogger("action_listener")
 
 
+class SendMessageHelper(abc.ABC):
+    @abc.abstractmethod
+    def send_detected_action(self, message: DetectedActionMessage):
+        """Send a detected action to the led controller"""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def send_hearbeat(self, message: ListenerHeartbeatMessage):
+        """Send a heartbeat to the led controller"""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def check_connection_led_controller(self) -> bool:
+        """Check if the connection to the led controller is available"""
+        raise NotImplementedError()
+
+
+class HTTPSendMessageHelper(SendMessageHelper):
+    def __init__(self, listener_ip: str, led_controller_ip: str, port: int):
+        self._listener_ip = listener_ip
+        self._led_controller_ip = led_controller_ip
+        self._port = port
+
+    def send_detected_action(self, message: DetectedActionMessage):
+        url = f"http://{self._led_controller_ip}:{self._port}/listener_request"
+        requests.post(url, json=dataclasses.asdict(message), timeout=0.2)
+        return
+
+    def send_hearbeat(self, message: ListenerHeartbeatMessage):
+        url = f"http://{self._led_controller_ip}:{self._port}/listener_heartbeat"
+        requests.post(url, json=dataclasses.asdict(message), timeout=0.2)
+        return
+
+    def check_connection_led_controller(self) -> bool:
+        message = ListenerHeartbeatMessage(listener_id=self._listener_ip)
+        try:
+            self.send_hearbeat(message)
+            return True
+        except requests.exceptions.ConnectionError:
+            return False
+
+
 class ActionListener(metaclass=abc.ABCMeta):
     """"""
 
@@ -22,6 +64,7 @@ class ActionListener(metaclass=abc.ABCMeta):
     default_led_controller_port = 8000
     default_heartbeat_period = 660  # seconds
     heartbeat_endpoint = "/listener_heartbeat"
+    request_endpoint = "/listener_request"
 
     def __init__(
         self,
@@ -30,12 +73,12 @@ class ActionListener(metaclass=abc.ABCMeta):
         self.id = None
         self.type = "ActionListener"
         self.led_controller_ip = None
-        self.led_controller_heartbeat_url = None
         self.led_controller_port = None
         self.configured = False
         self._config_checker = ConfigChecker()
         self._heartbeat_period = None  # seconds
         self._heartbeat_thread = None
+        self._send_message_helper = None
 
     """
     Setters/Loaders
@@ -56,22 +99,24 @@ class ActionListener(metaclass=abc.ABCMeta):
 
         self.id = config_data["id"]
         self.type = config_data["type"]
+        self.protocol = config_data["protocol"]
+        self._send_message_helper = HTTPSendMessageHelper(
+            self.id,
+            config_data["led_controller_ip"],
+            config_data["led_controller_port"],
+        )
+
         self.led_controller_port = (
             int(config_data["led_controller_port"])
             if "led_controller_port" in config_data.keys()
             else ActionListener.default_led_controller_port
         )
         self.led_controller_ip = config_data["led_controller_ip"]
-        self.led_controller_heartbeat_url = (
-            f"http://{self.led_controller_ip}:"
-            f"{self.led_controller_port}{ActionListener.heartbeat_endpoint}"
-        )
         self._heartbeat_period = (
             int(config_data["heartbeat_period"])
             if "heartbeat_period" in config_data.keys()
             else ActionListener.default_heartbeat_period
         )
-
         return config_check_flag
 
     @abc.abstractmethod
@@ -95,7 +140,7 @@ class ActionListener(metaclass=abc.ABCMeta):
             while True:
                 time.sleep(period)
                 logger.info("Sending heartbeat to led controller")
-                if self._check_connection_led_controller():
+                if self._send_message_helper.check_connection_led_controller():
                     logger.info("Heartbeat sent with success")
                 else:
                     logger.error("Heartbeat was sent unsuccessfully")
@@ -118,19 +163,16 @@ class ActionListener(metaclass=abc.ABCMeta):
             action_detected=action_name,
             action_data=action_data if action_data else None,
         )
-        target_url = f"http://{self.led_controller_ip}:{self.led_controller_port}/listener_request"
         try:
-            requests.post(
-                target_url, data=json.dumps(dataclasses.asdict(message)), timeout=0.2
-            )
+            self._send_message_helper.send_detected_action(message)
         except Exception as e:
             logger.error(
                 f"Error while doing request to led controller - Message error: {e}"
             )
         else:
             logger.info(
-                f"Send with success the detected action to {target_url} \
-                with data {dataclasses.asdict(message)}"
+                f"Send with success the detected action to {self.led_controller_ip}"
+                f"with data {dataclasses.asdict(message)}"
             )
 
     def start(self):
@@ -139,7 +181,7 @@ class ActionListener(metaclass=abc.ABCMeta):
             logger.error(f"Could not start {self.name}. Not configured")
             raise Exception("Not configured")
 
-        if not self._check_connection_led_controller():
+        if not self._send_message_helper.check_connection_led_controller():
             msg = (
                 "Could not connect with led controller, with ip address "
                 f"{self.led_controller_ip}"
@@ -158,20 +200,6 @@ class ActionListener(metaclass=abc.ABCMeta):
     """
     Checkers
     """
-
-    def _check_connection_led_controller(self):
-        message = ListenerHeartbeatMessage(listener_id=self.id)
-
-        try:
-            response = requests.post(
-                self.led_controller_heartbeat_url,
-                data=json.dumps(dataclasses.asdict(message)),
-            )
-        except requests.exceptions.ConnectionError:
-            return False
-
-        status_code = response.status_code
-        return status_code == 200
 
     """
     Util methods / Static methods
