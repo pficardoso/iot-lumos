@@ -9,6 +9,7 @@ import requests
 
 from lumos.action_listener.config_checker import ConfigChecker
 from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
+from lumos.led_controller.http_service import HttpService
 
 logger = logging.getLogger("action_listener")
 
@@ -37,12 +38,18 @@ class HTTPSendMessageHelper(SendMessageHelper):
         self._port = port
 
     def send_detected_action(self, message: DetectedActionMessage):
-        url = f"http://{self._led_controller_ip}:{self._port}/listener_request"
+        url = (
+            f"http://{self._led_controller_ip}:{self._port}"
+            f"{HttpService.DETECTED_ACTION_ENDPOINT}"
+        )
         requests.post(url, json=dataclasses.asdict(message), timeout=0.2)
         return
 
     def send_hearbeat(self, message: ListenerHeartbeatMessage):
-        url = f"http://{self._led_controller_ip}:{self._port}/listener_heartbeat"
+        url = (
+            f"http://{self._led_controller_ip}:{self._port}"
+            f"{HttpService.HEARTBEAT_ENDPOINT}"
+        )
         requests.post(url, json=dataclasses.asdict(message), timeout=0.2)
         return
 

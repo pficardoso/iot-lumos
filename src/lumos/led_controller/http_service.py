@@ -67,11 +67,14 @@ class ListenerHeartbeatHandler(RequestHandler):
 
 
 class HttpService:
+    DETECTED_ACTION_ENDPOINT = "/detected_action"
+    HEARTBEAT_ENDPOINT = "/heartbeat"
+
     def __init__(self, port=8000):
         self._app = tornado.web.Application(
             [
-                (r"/listener_heartbeat", ListenerHeartbeatHandler),
-                (r"/listener_request", ListenerRequestHandler),
+                (rf"{self.HEARTBEAT_ENDPOINT}", ListenerHeartbeatHandler),
+                (rf"{self.DETECTED_ACTION_ENDPOINT}", ListenerRequestHandler),
             ]
         )
         self._port = port
