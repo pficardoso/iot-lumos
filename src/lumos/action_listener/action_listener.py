@@ -26,14 +26,14 @@ class SendMessageHelper(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def check_connection_led_controller(self) -> bool:
-        """Check if the connection to the led controller is available"""
+    def check_connection_target(self) -> bool:
+        """Check if the connection to the target is available"""
         raise NotImplementedError()
 
 
 class HTTPSendMessageHelper(SendMessageHelper):
-    def __init__(self, listener_ip: str, led_controller_ip: str, port: int):
-        self._listener_ip = listener_ip
+    def __init__(self, listener_id: str, led_controller_ip: str, port: int):
+        self._listenter_id = listener_id
         self._led_controller_ip = led_controller_ip
         self._port = port
 
@@ -53,13 +53,50 @@ class HTTPSendMessageHelper(SendMessageHelper):
         requests.post(url, json=dataclasses.asdict(message), timeout=0.2)
         return
 
-    def check_connection_led_controller(self) -> bool:
-        message = ListenerHeartbeatMessage(listener_id=self._listener_ip)
+    def check_connection_target(self) -> bool:
+        message = ListenerHeartbeatMessage(listener_id=self._listenter_id)
         try:
             self.send_hearbeat(message)
             return True
         except requests.exceptions.ConnectionError:
             return False
+
+
+class MQQTSendMessageHelper(SendMessageHelper):
+    def __init__(self, listener_id: str, broker_host: str, broker_port: int):
+        from paho.mqtt import client as mqtt_client
+
+        self._broker_host = broker_host
+        self._broker_port = broker_port
+        self._listener_id = listener_id
+        self._client = mqtt_client.Client(client_id=listener_id)
+        self._client.on_connect = self.on_connect
+        self._client.connect(self._broker_host, self._broker_port)
+
+    def send_detected_action(self, message: DetectedActionMessage):
+        self._client.publish(
+            "lumos/detected_action", json.dumps(dataclasses.asdict(message))
+        )
+        return
+
+    def send_hearbeat(self, message: ListenerHeartbeatMessage):
+        self._client.publish("lumos/heartbeat", json.dumps(dataclasses.asdict(message)))
+        return
+
+    def check_connection_target(self) -> bool:
+        message = ListenerHeartbeatMessage(listener_id=self._listener_id)
+        try:
+            self.send_hearbeat(message)
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            logger.info("Connected to MQTT Broker!")
+        else:
+            logger.error("Failed to connect, return code %d\n", rc)
 
 
 class ActionListener(metaclass=abc.ABCMeta):
@@ -70,8 +107,6 @@ class ActionListener(metaclass=abc.ABCMeta):
 
     default_led_controller_port = 8000
     default_heartbeat_period = 660  # seconds
-    heartbeat_endpoint = "/listener_heartbeat"
-    request_endpoint = "/listener_request"
 
     def __init__(
         self,
@@ -79,8 +114,6 @@ class ActionListener(metaclass=abc.ABCMeta):
         """Constructor for ActionListener"""
         self.id = None
         self.type = "ActionListener"
-        self.led_controller_ip = None
-        self.led_controller_port = None
         self.configured = False
         self._config_checker = ConfigChecker()
         self._heartbeat_period = None  # seconds
@@ -107,23 +140,19 @@ class ActionListener(metaclass=abc.ABCMeta):
         self.id = config_data["id"]
         self.type = config_data["type"]
         self.protocol = config_data["protocol"]
-        self._send_message_helper = HTTPSendMessageHelper(
-            self.id,
-            config_data["led_controller_ip"],
-            config_data["led_controller_port"],
-        )
+        if self.protocol == "HTTP":
+            self._send_message_helper = HTTPSendMessageHelper(
+                self.id,
+                config_data["led_controller_ip"],
+                int(config_data["led_controller_port"]),
+            )
+        elif self.protocol == "MQTT":
+            self._send_message_helper = MQQTSendMessageHelper(
+                self.id, config_data["broker_host"], int(config_data["broker_port"])
+            )
+        else:
+            raise Exception(f"Protocol {self.protocol} is not supported")
 
-        self.led_controller_port = (
-            int(config_data["led_controller_port"])
-            if "led_controller_port" in config_data.keys()
-            else ActionListener.default_led_controller_port
-        )
-        self.led_controller_ip = config_data["led_controller_ip"]
-        self._heartbeat_period = (
-            int(config_data["heartbeat_period"])
-            if "heartbeat_period" in config_data.keys()
-            else ActionListener.default_heartbeat_period
-        )
         return config_check_flag
 
     @abc.abstractmethod
@@ -146,8 +175,8 @@ class ActionListener(metaclass=abc.ABCMeta):
         def heartbeats_mechanism(period):
             while True:
                 time.sleep(period)
-                logger.info("Sending heartbeat to led controller")
-                if self._send_message_helper.check_connection_led_controller():
+                logger.info("Sending heartbeat")
+                if self._send_message_helper.check_connection_target():
                     logger.info("Heartbeat sent with success")
                 else:
                     logger.error("Heartbeat was sent unsuccessfully")
@@ -174,12 +203,12 @@ class ActionListener(metaclass=abc.ABCMeta):
             self._send_message_helper.send_detected_action(message)
         except Exception as e:
             logger.error(
-                f"Error while doing request to led controller - Message error: {e}"
+                f"Error while doing request to led controller with data "
+                f"{dataclasses.asdict(message)} - Message error: {e}"
             )
         else:
             logger.info(
-                f"Send with success the detected action to {self.led_controller_ip}"
-                f"with data {dataclasses.asdict(message)}"
+                f"Send with success the detected action with data {dataclasses.asdict(message)}"
             )
 
     def start(self):
@@ -188,11 +217,8 @@ class ActionListener(metaclass=abc.ABCMeta):
             logger.error(f"Could not start {self.name}. Not configured")
             raise Exception("Not configured")
 
-        if not self._send_message_helper.check_connection_led_controller():
-            msg = (
-                "Could not connect with led controller, with ip address "
-                f"{self.led_controller_ip}"
-            )
+        if not self._send_message_helper.check_connection_target():
+            msg = "Could not connect with target"
             logger.error(msg)
             raise Exception(msg)
 

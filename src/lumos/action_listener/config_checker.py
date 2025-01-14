@@ -1,7 +1,7 @@
 class ConfigChecker:
-    _mandatory_fields = ["id", "type", "led_controller_ip"]
+    _mandatory_fields = ["id", "type", "protocol"]
     _mandatory_fields_timer = ["timer_period"]
-#    _mandatory_fields_hand_clap_detect = ["model_artifact_path", "model_conf_path"]
+    #    _mandatory_fields_hand_clap_detect = ["model_artifact_path", "model_conf_path"]
 
     def __init__(self):
         self._mandatory_fields = None
@@ -11,8 +11,8 @@ class ConfigChecker:
             self.mandatory_fields = ConfigChecker._mandatory_fields
         elif type == "Timer":
             self.mandatory_fields = ConfigChecker._mandatory_fields_timer
-#        elif type == "HandClapDetector":
-#            self.mandatory_fields = ConfigChecker._mandatory_fields_hand_clap_detect
+        #        elif type == "HandClapDetector":
+        #            self.mandatory_fields = ConfigChecker._mandatory_fields_hand_clap_detect
         else:
             raise Exception(f"Type {type} does not exist")
 
@@ -41,8 +41,8 @@ class ConfigChecker:
             return self._check_fields_value_type_base(config_data)
         elif type == "Timer":
             return self._check_fields_value_type_timer(config_data)
-#        elif type == "HandClapDetector":
-#            return self._check_fields_value_type_hand_clap_detector(config_data)
+        #        elif type == "HandClapDetector":
+        #            return self._check_fields_value_type_hand_clap_detector(config_data)
         else:
             raise Exception(f"Type {type} does not exist")
 

@@ -37,7 +37,7 @@ class ListenerRequestHandler(RequestHandler):
             )
             self.set_status(200)
         else:
-            logger.info(
+            logger.warning(
                 "HttpService: the POST request received in Listener"
                 "Request endpoint was done unsuccessfully"
             )
