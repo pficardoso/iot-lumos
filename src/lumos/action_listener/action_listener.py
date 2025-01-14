@@ -9,7 +9,6 @@ import requests
 
 from lumos.action_listener.config_checker import ConfigChecker
 from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
-from lumos.led_controller.http_service import HttpService
 
 logger = logging.getLogger("action_listener")
 
@@ -38,6 +37,8 @@ class HTTPSendMessageHelper(SendMessageHelper):
         self._port = port
 
     def send_detected_action(self, message: DetectedActionMessage):
+        from lumos.led_controller.http_service import HttpService
+
         url = (
             f"http://{self._led_controller_ip}:{self._port}"
             f"{HttpService.DETECTED_ACTION_ENDPOINT}"
@@ -46,6 +47,8 @@ class HTTPSendMessageHelper(SendMessageHelper):
         return
 
     def send_hearbeat(self, message: ListenerHeartbeatMessage):
+        from lumos.led_controller.http_service import HttpService
+
         url = (
             f"http://{self._led_controller_ip}:{self._port}"
             f"{HttpService.HEARTBEAT_ENDPOINT}"
@@ -74,13 +77,19 @@ class MQQTSendMessageHelper(SendMessageHelper):
         self._client.connect(self._broker_host, self._broker_port)
 
     def send_detected_action(self, message: DetectedActionMessage):
+        from lumos.led_controller.mqtt_client import MQTTClient
+
         self._client.publish(
-            "lumos/detected_action", json.dumps(dataclasses.asdict(message))
+            MQTTClient.DETECTED_ACTION_TOPIC, json.dumps(dataclasses.asdict(message))
         )
         return
 
     def send_hearbeat(self, message: ListenerHeartbeatMessage):
-        self._client.publish("lumos/heartbeat", json.dumps(dataclasses.asdict(message)))
+        from lumos.led_controller.mqtt_client import MQTTClient
+
+        self._client.publish(
+            MQTTClient.HEARTBEAT_TOPIC, json.dumps(dataclasses.asdict(message))
+        )
         return
 
     def check_connection_target(self) -> bool:
