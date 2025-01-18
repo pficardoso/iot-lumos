@@ -3,7 +3,7 @@ import logging
 
 from paho.mqtt import client as mqtt_client
 
-from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
+from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage, LedCommandMessage
 from lumos.led_controller.led_controller import LedController
 
 logger = logging.getLogger("led_controller")
@@ -25,6 +25,18 @@ def lumos_detected_action_handler(payload: str):
     else:
         logger.warning("The received detected action was not processed with success")
 
+def lumos_led_command_handler(payload: str):
+    logger.info("Received a led command. Processing...")
+
+    request_success = False
+
+    data = LedCommandMessage(**json.loads(payload))
+    request_success = led_controller_obj.interpret_led_command(data)
+
+    if request_success:
+        logger.info("The received led command was processed with success")
+    else:
+        logger.warning("The received led command was not processed with success")
 
 def lumos_heartbeat_handler(payload):
     logger.info("Received a heartbeat. Processing...")
@@ -43,6 +55,7 @@ def lumos_heartbeat_handler(payload):
 class MQTTClient:
     DETECTED_ACTION_TOPIC = "lumos/detected_action"
     HEARTBEAT_TOPIC = "lumos/heartbeat"
+    LED_COMMAND_TOPIC = "lumos/led_command"
 
     topic_handlers = {
         DETECTED_ACTION_TOPIC: lumos_detected_action_handler,

@@ -5,7 +5,7 @@ import tornado
 from tornado.httpserver import HTTPServer
 from tornado.web import RequestHandler
 
-from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
+from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage, LedCommandMessage
 from lumos.led_controller.led_controller import LedController
 
 logger = logging.getLogger("led_controller")
@@ -14,7 +14,7 @@ logger = logging.getLogger("led_controller")
 led_controller_obj = LedController()
 
 
-class ListenerRequestHandler(RequestHandler):
+class DetectedActionRequestHandler(RequestHandler):
     def post(self):
         logger.info(
             "HttpService: received a POST request in Listener Request endpoint. Processing..."
@@ -44,6 +44,35 @@ class ListenerRequestHandler(RequestHandler):
             self.set_status(400)
 
 
+class LedCommandRequestHandler(RequestHandler):
+    def post(self):
+        logger.info(
+            "HttpService: received a POST request in Led Command endpoint. Processing..."
+        )
+
+        request_success = False
+        try:
+            request_data = json.loads(self.request.body)
+        except Exception:
+            logger.error("HttpService: could not fetch data from request body")
+            request_success = False
+
+        data = LedCommandMessage(**request_data)
+        request_success = led_controller_obj.interpret_led_command(data)
+
+        if request_success:
+            logger.info(
+                "HttpService: the POST request received in Led Command"
+                "endpoint was done successfully"
+            )
+            self.set_status(200)
+        else:
+            logger.warning(
+                "HttpService: the POST request received in Led Command"
+                "endpoint was done unsuccessfully"
+            )
+            self.set_status(400)
+
 class ListenerHeartbeatHandler(RequestHandler):
     def post(self):
         logger.info(
@@ -68,13 +97,16 @@ class ListenerHeartbeatHandler(RequestHandler):
 
 class HttpService:
     DETECTED_ACTION_ENDPOINT = "/detected_action"
+    LED_COMMAND_ENDPOINT = "/led_command"
     HEARTBEAT_ENDPOINT = "/heartbeat"
+
 
     def __init__(self, port=8000):
         self._app = tornado.web.Application(
             [
                 (rf"{self.HEARTBEAT_ENDPOINT}", ListenerHeartbeatHandler),
-                (rf"{self.DETECTED_ACTION_ENDPOINT}", ListenerRequestHandler),
+                (rf"{self.LED_COMMAND_ENDPOINT}", LedCommandRequestHandler),
+                (rf"{self.DETECTED_ACTION_ENDPOINT}", DetectedActionRequestHandler),
             ]
         )
         self._port = port
