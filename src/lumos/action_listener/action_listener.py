@@ -6,8 +6,14 @@ import threading
 import time
 
 import requests
+from pydantic import ValidationError
 
-from lumos.action_listener.config_checker import ConfigChecker
+import lumos.logger  # noqa: F401
+from lumos.action_listener.config import (
+    BaseActionListenerConfig,
+    HttpProtocolConfig,
+    MqttProtocolConfig,
+)
 from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
 
 logger = logging.getLogger("action_listener")
@@ -124,7 +130,6 @@ class ActionListener(metaclass=abc.ABCMeta):
         self.id = None
         self.type = "ActionListener"
         self.configured = False
-        self._config_checker = ConfigChecker()
         self._heartbeat_period = None  # seconds
         self._heartbeat_thread = None
         self._send_message_helper = None
@@ -135,37 +140,45 @@ class ActionListener(metaclass=abc.ABCMeta):
 
     def config(self, config_path) -> bool:
         with open(config_path) as f_conf:
-            config_data = json.load(f_conf)["action_listener"]
+            config_data = json.load(f_conf)
+        logger.info(f"Starting configuration using {config_path} file")
 
-        is_configured_gen = self._config_general(config_data)
-        is_configured_spe = self._config_specialized(config_data)
+        try:
+            is_configured_gen = self._config_general(config_data)
+            is_configured_spe = self._config_specialized(config_data)
+        except ValidationError as e:
+            logger.error(
+                f"Error while configuring listener"
+                f"with data {config_data} - Error: {e}"
+            )
+            raise
 
         self.configured = is_configured_gen and is_configured_spe
         return self.configured
 
-    def _config_general(self, config_data: dict) -> bool:
-        config_check_flag = self._config_checker.check_config_data(config_data)
+    def _config_general(self, config_dict: dict) -> bool:
+        config = BaseActionListenerConfig(**config_dict)
 
-        self.id = config_data["id"]
-        self.type = config_data["type"]
-        self.protocol = config_data["protocol"]
-        if self.protocol == "HTTP":
+        self.id = config.id
+        self.type = config.type
+        self.protocol = config.protocol
+        if isinstance(self.protocol, HttpProtocolConfig):
             self._send_message_helper = HTTPSendMessageHelper(
                 self.id,
-                config_data["led_controller_ip"],
-                int(config_data["led_controller_port"]),
+                config.protocol.led_controller_address,
+                config.protocol.led_controller_port,
             )
-        elif self.protocol == "MQTT":
+        elif isinstance(self.protocol, MqttProtocolConfig):
             self._send_message_helper = MQQTSendMessageHelper(
-                self.id, config_data["broker_host"], int(config_data["broker_port"])
+                self.id, config.protocol.broker_address, config.protocol.broker_port
             )
         else:
             raise Exception(f"Protocol {self.protocol} is not supported")
 
-        return config_check_flag
+        return True
 
     @abc.abstractmethod
-    def _config_specialized(self, config_data: dict) -> bool:
+    def _config_specialized(self, config_dict: dict) -> bool:
         pass
 
     """

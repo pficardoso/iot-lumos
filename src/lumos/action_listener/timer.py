@@ -1,9 +1,23 @@
 import logging
 import time
 
+from pydantic import validator
+
 from lumos.action_listener.action_listener import ActionListener
+from lumos.action_listener.config import BaseActionListenerConfig
 
 logger = logging.getLogger("action_listener")
+
+
+class TimerConfig(BaseActionListenerConfig):
+    type: str = "Timer"
+    timer_period: int
+
+    @validator("type")
+    def validate_type(cls, value):
+        if value != "Timer":
+            raise ValueError("The 'type' field must be 'Timer'.")
+        return value
 
 
 class Timer(ActionListener):
@@ -23,14 +37,16 @@ class Timer(ActionListener):
     Setters/Loaders
     """
 
-    def _config_specialized(self, config_data: dict) -> bool:
+    def _config_specialized(self, config_dict: dict):
+        """
         config_check_flag = self._config_checker.check_config_data(
             config_data, self.type
         )
-        self.timer_period = int(config_data["timer_period"])
+        """
+        config = TimerConfig(**config_dict)
+        self.timer_period = config.timer_period
         logger.info(f"Configured with time period of {self.timer_period} seconds")
-
-        return config_check_flag
+        return True
 
     """
     Getters
