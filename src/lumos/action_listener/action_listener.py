@@ -20,7 +20,7 @@ class SendMessageHelper(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_hearbeat(self, message: ListenerHeartbeatMessage):
+    def send_heartbeat(self, message: ListenerHeartbeatMessage):
         """Send a heartbeat to the led controller"""
         raise NotImplementedError()
 
@@ -46,7 +46,7 @@ class HTTPSendMessageHelper(SendMessageHelper):
         requests.post(url, json=dataclasses.asdict(message), timeout=0.2)
         return
 
-    def send_hearbeat(self, message: ListenerHeartbeatMessage):
+    def send_heartbeat(self, message: ListenerHeartbeatMessage):
         from lumos.led_controller.http_service import HttpService
 
         url = (
@@ -59,7 +59,7 @@ class HTTPSendMessageHelper(SendMessageHelper):
     def check_connection_target(self) -> bool:
         message = ListenerHeartbeatMessage(listener_id=self._listenter_id)
         try:
-            self.send_hearbeat(message)
+            self.send_heartbeat(message)
             return True
         except requests.exceptions.ConnectionError:
             return False
@@ -84,7 +84,7 @@ class MQQTSendMessageHelper(SendMessageHelper):
         )
         return
 
-    def send_hearbeat(self, message: ListenerHeartbeatMessage):
+    def send_heartbeat(self, message: ListenerHeartbeatMessage):
         from lumos.led_controller.mqtt_client import MQTTClient
 
         self._client.publish(
@@ -95,7 +95,7 @@ class MQQTSendMessageHelper(SendMessageHelper):
     def check_connection_target(self) -> bool:
         message = ListenerHeartbeatMessage(listener_id=self._listener_id)
         try:
-            self.send_hearbeat(message)
+            self.send_heartbeat(message)
             return True
         except Exception:
             return False
