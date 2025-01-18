@@ -18,7 +18,7 @@ def lumos_detected_action_handler(payload: str):
     request_success = False
 
     data = DetectedActionMessage(**json.loads(payload))
-    request_success = led_controller_obj.interpret_request(data)
+    request_success = led_controller_obj.interpret_detected_action(data)
 
     if request_success:
         logger.info("The received detected action was processed with success")

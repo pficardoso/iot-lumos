@@ -4,7 +4,7 @@ import os
 
 import requests
 
-from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
+from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage, LedCommandMessage
 from lumos.definitions import Definitions
 from lumos.led_controller.config_checker import ConfigChecker
 
@@ -197,7 +197,7 @@ class LedController:
         except Exception:
             logger.error(error_message)
 
-    def interpret_request(self, data: DetectedActionMessage):
+    def interpret_detected_action(self, data: DetectedActionMessage):
         logger.info(
             "Interpreting a request made by a listener: resolving listener identification..."
         )
@@ -234,6 +234,47 @@ class LedController:
         led_action_function_to_trigger = led_action_functions[led_action]
         led_action_function_to_trigger(self, led_name)
         return True
+
+    def interpret_led_command(self, data: LedCommandMessage):
+        logger.info(
+            "Interpreting a led command request..."
+        )
+        source_id = data.listener_id
+        source_listener_name = self.get_listener_name_by_id(source_id)
+        if source_listener_name is None:
+            logger.error(
+                f"Impossible to make listener identification, listener"
+                f"with id '{source_id}' is not configured"
+            )
+            return False
+        logger.info(
+            f"Listener identification done with success. "
+            f"Interpreting request made by listener '{source_listener_name}' with id '{source_id}'"
+        )
+
+        if data.command not in led_action_functions.keys():
+            logger.error(
+                f"Led command '{data.command}' is not available. "
+                f"Available commands are: {led_action_functions.keys()}"
+            )
+            return False
+
+        if data.target_led not in self._leds.keys():
+            logger.error(
+                f"Led '{data.target_led}' is not available. "
+                f"Available leds are: {self._leds.keys()}"
+            )
+            return False
+
+        logger.info(
+            "Request was interpreted with success: triggering"
+            f"action '{data.command}' to led '{data.target_led}'")
+
+        led_action_function_to_trigger = led_action_functions[data.command]
+        led_action_function_to_trigger(self, data.led_name)
+        return True
+
+
 
     def interpret_heartbeat(self, data: ListenerHeartbeatMessage):
         logger.info(

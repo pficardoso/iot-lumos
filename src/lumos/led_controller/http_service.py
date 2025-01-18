@@ -28,7 +28,7 @@ class ListenerRequestHandler(RequestHandler):
             request_success = False
 
         data = DetectedActionMessage(**request_data)
-        request_success = led_controller_obj.interpret_request(data)
+        request_success = led_controller_obj.interpret_detected_action(data)
 
         if request_success:
             logger.info(
