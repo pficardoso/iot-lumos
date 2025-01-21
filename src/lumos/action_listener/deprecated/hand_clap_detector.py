@@ -1,3 +1,4 @@
+"""
 import json
 import logging
 import os
@@ -51,7 +52,6 @@ class Model:
 
 
 class HandClapDetector(ActionListener):
-    """"""
 
     name = "HandClapDetector"
     type = "HandClapDetector"
@@ -59,7 +59,7 @@ class HandClapDetector(ActionListener):
     def __init__(
         self,
     ):
-        """Constructor for HandClapDetector"""
+        Constructor for HandClapDetector
         ActionListener.__init__(self)
         self._model_art_path = None
         self._model_conf_path = None
@@ -78,10 +78,6 @@ class HandClapDetector(ActionListener):
         self._features_queue = queue.Queue()
         self._detection_enabled = True
         self._it_counter = 0
-
-    """
-    Setters/Loaders
-    """
 
     def _config_specialized(self, config_data: dict) -> bool:
         config_check_flag = self._config_checker.check_config_data(
@@ -144,14 +140,6 @@ class HandClapDetector(ActionListener):
     def flush_segments_features(self):
         self._features_queue.queue.clear()
 
-    """
-    Getters
-    """
-
-    """
-    Workers
-    """
-
     def _run_engine(self):
         print("Listening and Predicting...")
         with self._audio_receiver:
@@ -178,22 +166,12 @@ class HandClapDetector(ActionListener):
                         self._it_counter = 0
                         logger.info("Detection reactivated")
 
-    """
-    Boolean methods
-    """
-
     def _detection_is_enabled(self):
         return self._detection_enabled
-
-    """
-    Checkers
-    """
 
     def _check_model_config_data(self):
         # TODO: to improve
         # acess self._model_conf_path
         return True
 
-    """
-    Util methods / Static methods
-    """
+"""
