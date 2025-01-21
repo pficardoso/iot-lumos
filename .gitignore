@@ -50,4 +50,5 @@ MANIFEST
 
 # Per-project virtualenvs
 .venv*/
+venv
 .conda*/

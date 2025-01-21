@@ -8,9 +8,16 @@
 """
 from setuptools import setup
 
+def read_requirements():
+    """Parse requirements from requirements.txt."""
+    with open("requirements.txt", "r") as file:
+        return file.read().splitlines()
+
+
 if __name__ == "__main__":
     try:
-        setup(use_scm_version={"version_scheme": "no-guess-dev"})
+
+        setup(use_scm_version={"version_scheme": "no-guess-dev"}, install_requires=read_requirements())
     except:  # noqa
         print(
             "\n\nAn error occurred while building the project, "
