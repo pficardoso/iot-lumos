@@ -1,22 +1,16 @@
-from typing import Union
+from typing import Literal, Union
 
 from pydantic import BaseModel, validator
 
 
 class HttpProtocolConfig(BaseModel):
-    type: str = "http"
+    type: Literal["http"]
     led_controller_address: str
     led_controller_port: int
 
-    @validator("type")
-    def validate_type(cls, value):
-        if value != "http":
-            raise ValueError("The 'type' field must be 'http'.")
-        return value
-
 
 class MqttProtocolConfig(BaseModel):
-    type: str = "mqtt"
+    type: Literal["mqtt"]
     broker_address: str
     broker_port: int
 
