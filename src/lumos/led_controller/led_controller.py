@@ -1,12 +1,22 @@
 import json
 import logging
-import os
+from typing import Dict, List
 
 import requests
 
-from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage, LedCommandMessage
+import lumos.logger  # noqa: F401
+from lumos.common.messages import (
+    DetectedActionMessage,
+    LedCommandMessage,
+    ListenerHeartbeatMessage,
+)
 from lumos.definitions import Definitions
-from lumos.led_controller.config_checker import ConfigChecker
+from lumos.led_controller.config import (
+    LedConfig,
+    LedControllerConfig,
+    ListenerConfig,
+    ListenerLedMapConfig,
+)
 
 definitions = Definitions()
 
@@ -31,25 +41,34 @@ class LedController:
     ):
         """Constructor for"""
         logger.info("Creating object of LedController")
-        self.name = None
-        self._leds = None
-        self._listeners = None
-        self._listeners_ids = dict()
-        self._map_listener_led_actions = dict()
-        self.host = None
-        self.port = None
-        self._configured = False
-        self._config_checker = ConfigChecker()
+        self.name: str = None
+        self._leds: Dict[str, LedConfig] = None
+        self._listeners: Dict[str, ListenerConfig] = None
+        self._listeners_ids: Dict[str, str] = dict()  # {listener_id: listener_name}
+        self._map_listener_led_actions: Dict[
+            str, object
+        ] = dict()  # {listener_name: object}
+        self.host: str = None
+        self.port: int = None
+        self._configured: bool = False
 
     """
     Setters/Loaders
     """
 
-    def _load_listener_led_actions_map(self, map_data: list):
+    def _load_listener_led_actions_map(self, map_data: List[ListenerLedMapConfig]):
+        """
+        Given a list of mapping between listener and leds, it will load the given data
+        into the internal mapping of the LedController. The mapping will be done as follows:
+        - each listener name will be a key in the map
+        - each listener_action will be a key in the listener's map
+        - for each listener_action, the mapping will have a tuple of two elements
+          (led_name, led_action)
+        """
         for map_unit in map_data:
-            listener = map_unit["listener"]
-            listener_action = map_unit["listener_action"]
-            led_name = map_unit["led"]
+            listener = map_unit.listener
+            listener_action = map_unit.listener_action
+            led_name = map_unit.led
 
             if listener not in self._map_listener_led_actions:
                 self._map_listener_led_actions[listener] = dict()
@@ -76,30 +95,20 @@ class LedController:
     def config(self, config_path):
         logger.info(f"Starting configuration using {config_path} file")
 
-        if not os.path.isfile(config_path):
-            raise Exception(f"{config_path} file does not exist")
-        if config_path.split(".")[-1] != "json":
-            raise Exception(f"{config_path} does not have .json extension")
-
         with open(config_path) as f_conf:
-            config_data = json.load(f_conf)["led_controller"]
+            config_data = json.load(f_conf)
 
-        # check validity of config data
-        if self._config_checker.check_config_data(config_data):
-            # makes parse of data into instance
-            self.name = config_data["name"]
-            self._leds = config_data["leds"]
-            self._listeners = config_data["listeners"]
-            for listener_name, listener_data in self._listeners.items():
-                self._listeners_ids[listener_data["id"]] = listener_name
-            self._load_listener_led_actions_map(config_data["listener_led_map"])
-            self._configured = True
-            logger.info(
-                f"LedController was configured successfully with name: {self.name}"
-            )
-        else:
-            logger.error("Data from config file is not valid.")
-            raise Exception(f"Data from {config_path} is not valid")
+        config_data = LedControllerConfig(**config_data)
+
+        # makes parse of data into instance
+        self.name = config_data.name
+        self._leds = config_data.leds
+        self._listeners = config_data.listeners
+        for listener_name, listener_data in self._listeners.items():
+            self._listeners_ids[listener_data["id"]] = listener_name
+        self._load_listener_led_actions_map(config_data.listener_led_map)
+        self._configured = True
+        logger.info(f"LedController was configured successfully with name: {self.name}")
 
     """
     Getters
@@ -236,9 +245,7 @@ class LedController:
         return True
 
     def interpret_led_command(self, data: LedCommandMessage):
-        logger.info(
-            "Interpreting a led command request..."
-        )
+        logger.info("Interpreting a led command request...")
         source_id = data.listener_id
         source_listener_name = self.get_listener_name_by_id(source_id)
         if source_listener_name is None:
@@ -268,13 +275,12 @@ class LedController:
 
         logger.info(
             "Request was interpreted with success: triggering"
-            f"action '{data.command}' to led '{data.target_led}'")
+            f"action '{data.command}' to led '{data.target_led}'"
+        )
 
         led_action_function_to_trigger = led_action_functions[data.command]
         led_action_function_to_trigger(self, data.led_name)
         return True
-
-
 
     def interpret_heartbeat(self, data: ListenerHeartbeatMessage):
         logger.info(
