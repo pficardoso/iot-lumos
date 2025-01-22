@@ -1,4 +1,11 @@
+import json
 from argparse import ArgumentParser
+
+from lumos.led_controller.config import (
+    HttpProtocolConfig,
+    LedControllerConfig,
+    MqttProtocolConfig,
+)
 
 
 def add_arguments(parser: ArgumentParser):
@@ -11,6 +18,20 @@ def add_arguments(parser: ArgumentParser):
 
 
 def run(args):
-    from lumos.led_controller.http_service import start_led_controller_http_service
+    config_data = LedControllerConfig(json.load(open(args.config)))
+    if isinstance(config_data.protocol, MqttProtocolConfig):
+        from lumos.led_controller.mqtt_client import start_led_controller_mqtt_client
 
-    start_led_controller_http_service(args.config)
+        start_led_controller_mqtt_client(
+            config_data.protocol.broker_address,
+            config_data.protocol.broker_port,
+            args.config,
+        )
+    elif isinstance(config_data.protocol, HttpProtocolConfig):
+        from lumos.led_controller.http_service import start_led_controller_http_service
+
+        start_led_controller_http_service(
+            config_data.protocol.led_controller_port, args.config
+        )
+    else:
+        raise Exception(f"Protocol {config_data.protocol} is not supported")

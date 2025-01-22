@@ -5,7 +5,11 @@ import tornado
 from tornado.httpserver import HTTPServer
 from tornado.web import RequestHandler
 
-from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage, LedCommandMessage
+from lumos.common.messages import (
+    DetectedActionMessage,
+    LedCommandMessage,
+    ListenerHeartbeatMessage,
+)
 from lumos.led_controller.led_controller import LedController
 
 logger = logging.getLogger("led_controller")
@@ -73,6 +77,7 @@ class LedCommandRequestHandler(RequestHandler):
             )
             self.set_status(400)
 
+
 class ListenerHeartbeatHandler(RequestHandler):
     def post(self):
         logger.info(
@@ -100,7 +105,6 @@ class HttpService:
     LED_COMMAND_ENDPOINT = "/led_command"
     HEARTBEAT_ENDPOINT = "/heartbeat"
 
-
     def __init__(self, port=8000):
         self._app = tornado.web.Application(
             [
@@ -123,7 +127,7 @@ class HttpService:
         tornado.ioloop.IOLoop.current().start()
 
 
-def start_led_controller_http_service(config_file=None):
+def start_led_controller_http_service(port: int, config_file):
     led_controller_obj.config(config_file)
     web_service = HttpService()
     web_service.start()

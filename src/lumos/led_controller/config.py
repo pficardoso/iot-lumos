@@ -1,6 +1,17 @@
-from typing import Dict, List
+from typing import Dict, List, Literal, Union
 
 from pydantic import BaseModel, field_validator
+
+
+class HttpProtocolConfig(BaseModel):
+    type: Literal["http"]
+    led_controller_port: int
+
+
+class MqttProtocolConfig(BaseModel):
+    type: Literal["mqtt"]
+    broker_address: str
+    broker_port: int
 
 
 class LedConfig(BaseModel):
@@ -23,8 +34,7 @@ class LedControllerConfig(BaseModel):
     leds: Dict[str, LedConfig]  # {led_name: Led}
     listeners: Dict[str, ListenerConfig]  # {listener_name: Listener}
     listener_led_map: List[ListenerLedMapConfig]
-    host: str
-    port: str
+    protocol: Union[HttpProtocolConfig, MqttProtocolConfig]
 
     @field_validator("listener_led_map")
     def validate_listener_led_map(cls, v, info):
