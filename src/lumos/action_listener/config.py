@@ -1,6 +1,6 @@
 from typing import Literal, Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 class HttpProtocolConfig(BaseModel):
@@ -14,7 +14,7 @@ class MqttProtocolConfig(BaseModel):
     broker_address: str
     broker_port: int
 
-    @validator("type")
+    @field_validator("type")
     def validate_type(cls, value):
         if value != "mqtt":
             raise ValueError("The 'type' field must be 'mqtt'.")
