@@ -10,14 +10,16 @@ class DetectedActionMessage:
     action_detected: dict
     action_data: Optional[dict] = None
 
+
 @dataclass
 class LedCommandMessage:
     listener_id: Optional[str]
     listener_name: Optional[str]
     listener_type: Optional[str]
     target_led: str
-    command : str
-    command_args : Optional[dict]
+    command: str
+    command_args: Optional[dict]
+
 
 @dataclass
 class ListenerHeartbeatMessage:
