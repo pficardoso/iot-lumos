@@ -5,7 +5,7 @@ from pydantic import BaseModel, field_validator
 
 class HttpProtocolConfig(BaseModel):
     type: Literal["http"]
-    led_controller_port: int
+    port: int
 
 
 class MqttProtocolConfig(BaseModel):

@@ -11,12 +11,7 @@ from lumos.common.messages import (
     ListenerHeartbeatMessage,
 )
 from lumos.definitions import Definitions
-from lumos.led_controller.config import (
-    LedConfig,
-    LedControllerConfig,
-    ListenerConfig,
-    ListenerLedMapConfig,
-)
+from lumos.led_controller.config import LedControllerConfig, ListenerLedMapConfig
 
 definitions = Definitions()
 
@@ -42,8 +37,8 @@ class LedController:
         """Constructor for"""
         logger.info("Creating object of LedController")
         self.name: str = None
-        self._leds: Dict[str, LedConfig] = None
-        self._listeners: Dict[str, ListenerConfig] = None
+        self._leds: Dict[str, str] = None  # {led_name: led_ip}
+        self._listeners: Dict[str, str] = None  # {listener_name: listener_id}
         self._listeners_ids: Dict[str, str] = dict()  # {listener_id: listener_name}
         self._map_listener_led_actions: Dict[
             str, object
@@ -67,15 +62,15 @@ class LedController:
         """
         for map_unit in map_data:
             listener = map_unit.listener
-            listener_action = map_unit.listener_action
+            listener_action = map_unit.detected_action
             led_name = map_unit.led
 
             if listener not in self._map_listener_led_actions:
                 self._map_listener_led_actions[listener] = dict()
 
             listener_action, led_action = (
-                map_unit["listener_action"],
-                map_unit["led_action"],
+                map_unit.detected_action,
+                map_unit.led_action,
             )
             if led_action not in led_action_functions:
                 logger.error(
@@ -102,10 +97,16 @@ class LedController:
 
         # makes parse of data into instance
         self.name = config_data.name
-        self._leds = config_data.leds
-        self._listeners = config_data.listeners
-        for listener_name, listener_data in self._listeners.items():
-            self._listeners_ids[listener_data["id"]] = listener_name
+        self._leds = {
+            led_name: led_config.address
+            for led_name, led_config in config_data.leds.items()
+        }
+        self._listeners = {
+            listener_name: listener_config.id
+            for listener_name, listener_config in config_data.listeners.items()
+        }
+        for listener_name, id in self._listeners.items():
+            self._listeners_ids[id] = listener_name
         self._load_listener_led_actions_map(config_data.listener_led_map)
         self._configured = True
         logger.info(f"LedController was configured successfully with name: {self.name}")
