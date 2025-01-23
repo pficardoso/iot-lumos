@@ -1,0 +1,10 @@
+{
+  "id": "0e28903c2cbcbdd1b8c94ef8266dc3ebbf904299",
+  "type": "Timer",
+  "protocol": {
+    "type": "http",
+    "led_controller_address": "localhost",
+    "led_controller_port": "8000"
+  },
+  "timer_period": 5
+}

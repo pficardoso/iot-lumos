@@ -1,0 +1,25 @@
+{
+  "name": "dev",
+  "leds": {
+    "window": {
+      "address": "192.168.1.191"
+    }
+  },
+  "listeners": {
+    "window": {
+      "id":"0e28903c2cbcbdd1b8c94ef8266dc3ebbf904299"
+      }
+    },
+  "listener_led_map": [
+    {
+      "listener": "window",
+      "led": "window",
+      "detected_action": "timeout",
+      "led_action": "toggle"
+    }
+  ],
+  "protocol": {
+    "type": "http",
+    "port": 8000
+  }
+}
