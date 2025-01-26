@@ -1,12 +1,9 @@
-import logging
 import time
 
 from pydantic import validator
 
 from lumos.action_listener.action_listener import ActionListener
 from lumos.action_listener.config import BaseActionListenerConfig
-
-logger = logging.getLogger("action_listener")
 
 
 class TimerConfig(BaseActionListenerConfig):
@@ -45,7 +42,7 @@ class Timer(ActionListener):
         """
         config = TimerConfig(**config_dict)
         self.timer_period = config.timer_period
-        logger.info(f"Configured with time period of {self.timer_period} seconds")
+        self._logger.info(f"Configured with time period of {self.timer_period} seconds")
         return True
 
     """
@@ -62,9 +59,9 @@ class Timer(ActionListener):
             current_time = time.time()
             if (current_time - start_time) > self.timer_period:
                 self._send_detected_action("timeout")
-                logger.info("Finished time period.")
+                self._logger.info("Finished time period.")
                 start_time = current_time
-                logger.info("Starting another timer iteration")
+                self._logger.info("Starting another timer iteration")
 
     """
     Boolean methods

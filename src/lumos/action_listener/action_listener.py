@@ -16,8 +16,6 @@ from lumos.action_listener.config import (
 )
 from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
 
-logger = logging.getLogger("action_listener")
-
 
 class SendMessageHelper(abc.ABC):
     @abc.abstractmethod
@@ -41,6 +39,7 @@ class HTTPSendMessageHelper(SendMessageHelper):
         self._listenter_id = listener_id
         self._led_controller_ip = led_controller_ip
         self._port = port
+        self._logger = logging.getLogger("action_listener")
 
     def send_detected_action(self, message: DetectedActionMessage):
         from lumos.led_controller.http_service import HttpService
@@ -81,6 +80,7 @@ class MQQTSendMessageHelper(SendMessageHelper):
         self._client = mqtt_client.Client(client_id=listener_id)
         self._client.on_connect = self.on_connect
         self._client.connect(self._broker_host, self._broker_port)
+        self._logger = logging.getLogger("action_listener")
 
     def send_detected_action(self, message: DetectedActionMessage):
         from lumos.led_controller.mqtt_client import MQTTClient
@@ -106,12 +106,11 @@ class MQQTSendMessageHelper(SendMessageHelper):
         except Exception:
             return False
 
-    @staticmethod
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            logger.info("Connected to MQTT Broker!")
+            self._logger.info("Connected to MQTT Broker!")
         else:
-            logger.error("Failed to connect, return code %d\n", rc)
+            self._logger.error("Failed to connect, return code %d\n", rc)
 
 
 class ActionListener(metaclass=abc.ABCMeta):
@@ -133,6 +132,7 @@ class ActionListener(metaclass=abc.ABCMeta):
         self._heartbeat_period = None  # seconds
         self._heartbeat_thread = None
         self._send_message_helper = None
+        self._logger = logging.getLogger("action_listener")
 
     """
     Setters/Loaders
@@ -141,13 +141,13 @@ class ActionListener(metaclass=abc.ABCMeta):
     def config(self, config_path) -> bool:
         with open(config_path) as f_conf:
             config_data = json.load(f_conf)
-        logger.info(f"Starting configuration using {config_path} file")
+        self._logger.info(f"Starting configuration using {config_path} file")
 
         try:
             is_configured_gen = self._config_general(config_data)
             is_configured_spe = self._config_specialized(config_data)
         except ValidationError as e:
-            logger.error(
+            self._logger.error(
                 f"Error while configuring listener"
                 f"with data {config_data} - Error: {e}"
             )
@@ -197,11 +197,11 @@ class ActionListener(metaclass=abc.ABCMeta):
         def heartbeats_mechanism(period):
             while True:
                 time.sleep(period)
-                logger.info("Sending heartbeat")
+                self._logger.info("Sending heartbeat")
                 if self._send_message_helper.check_connection_target():
-                    logger.info("Heartbeat sent with success")
+                    self._logger.info("Heartbeat sent with success")
                 else:
-                    logger.error("Heartbeat was sent unsuccessfully")
+                    self._logger.error("Heartbeat was sent unsuccessfully")
 
         self._heartbeat_thread = threading.Thread(
             target=heartbeats_mechanism, args=(self._heartbeat_period,), daemon=True
@@ -224,29 +224,29 @@ class ActionListener(metaclass=abc.ABCMeta):
         try:
             self._send_message_helper.send_detected_action(message)
         except Exception as e:
-            logger.error(
+            self._logger.error(
                 f"Error while doing request to led controller with data "
                 f"{dataclasses.asdict(message)} - Message error: {e}"
             )
         else:
-            logger.info(
+            self._logger.info(
                 f"Send with success the detected action with data {dataclasses.asdict(message)}"
             )
 
     def start(self):
-        logger.info(f"Starting {self.name}...")
+        self._logger.info(f"Starting {self.name}...")
         if not self.configured:
-            logger.error(f"Could not start {self.name}. Not configured")
+            self._logger.error(f"Could not start {self.name}. Not configured")
             raise Exception("Not configured")
 
         if not self._send_message_helper.check_connection_target():
             msg = "Could not connect with target"
-            logger.error(msg)
+            self._logger.error(msg)
             raise Exception(msg)
 
         self._run_engine()  # starts the thread of engine
         self._run_heartbeats_mechanism()
-        logger.info(f"{self.name} started")
+        self._logger.info(f"{self.name} started")
 
     """
     Boolean methods

@@ -12,15 +12,14 @@ from lumos.common.messages import (
 )
 from lumos.led_controller.led_controller import LedController
 
-logger = logging.getLogger("led_controller")
-
-
-led_controller_obj = LedController()
-
 
 class DetectedActionRequestHandler(RequestHandler):
+    def initialize(self, led_controller):
+        self.logger = logging.getLogger("led_controller")
+        self.led_controller = led_controller
+
     def post(self):
-        logger.info(
+        self.logger.info(
             "HttpService: received a POST request in Listener Request endpoint. Processing..."
         )
 
@@ -28,20 +27,20 @@ class DetectedActionRequestHandler(RequestHandler):
         try:
             request_data = json.loads(self.request.body)
         except Exception:
-            logger.error("HttpService: could not fetch data from request body")
+            self.logger.error("HttpService: could not fetch data from request body")
             request_success = False
 
         data = DetectedActionMessage(**request_data)
-        request_success = led_controller_obj.interpret_detected_action(data)
+        request_success = self.led_controller.interpret_detected_action(data)
 
         if request_success:
-            logger.info(
+            self.logger.info(
                 "HttpService: the POST request received in Listener Request"
                 "endpoint was done successfully"
             )
             self.set_status(200)
         else:
-            logger.warning(
+            self.logger.warning(
                 "HttpService: the POST request received in Listener"
                 "Request endpoint was done unsuccessfully"
             )
@@ -49,8 +48,12 @@ class DetectedActionRequestHandler(RequestHandler):
 
 
 class LedCommandRequestHandler(RequestHandler):
+    def initialize(self, led_controller):
+        self.logger = logging.getLogger("led_controller")
+        self.led_controller = led_controller
+
     def post(self):
-        logger.info(
+        self.logger.info(
             "HttpService: received a POST request in Led Command endpoint. Processing..."
         )
 
@@ -58,20 +61,20 @@ class LedCommandRequestHandler(RequestHandler):
         try:
             request_data = json.loads(self.request.body)
         except Exception:
-            logger.error("HttpService: could not fetch data from request body")
+            self.logger.error("HttpService: could not fetch data from request body")
             request_success = False
 
         data = LedCommandMessage(**request_data)
-        request_success = led_controller_obj.interpret_led_command(data)
+        request_success = self.led_controller.interpret_led_command(data)
 
         if request_success:
-            logger.info(
+            self.logger.info(
                 "HttpService: the POST request received in Led Command"
                 "endpoint was done successfully"
             )
             self.set_status(200)
         else:
-            logger.warning(
+            self.logger.warning(
                 "HttpService: the POST request received in Led Command"
                 "endpoint was done unsuccessfully"
             )
@@ -79,21 +82,25 @@ class LedCommandRequestHandler(RequestHandler):
 
 
 class ListenerHeartbeatHandler(RequestHandler):
+    def initialize(self, led_controller):
+        self.logger = logging.getLogger("led_controller")
+        self.led_controller = led_controller
+
     def post(self):
-        logger.info(
-            "HttpService: received a POST request in  Listener Heartbeat endpoint. Processing..."
+        self.logger.info(
+            "HttpService: received a POST request in Listener Heartbeat endpoint. Processing..."
         )
 
         try:
             request_data = json.loads(self.request.body)
         except Exception:
-            logger.error("HttpService: could not fetch data from request body")
+            self.logger.error("HttpService: could not fetch data from request body")
             self.set_status(400)
 
         data = ListenerHeartbeatMessage(**request_data)
-        led_controller_obj.interpret_heartbeat(data)
+        self.led_controller.interpret_heartbeat(data)
 
-        logger.info(
+        self.logger.info(
             "HttpService: the POST request received in Listener Heartbeat"
             "endpoint was done successfully"
         )
@@ -105,29 +112,43 @@ class HttpService:
     LED_COMMAND_ENDPOINT = "/led_command"
     HEARTBEAT_ENDPOINT = "/heartbeat"
 
-    def __init__(self, port=8000):
+    def __init__(self, led_controller: LedController, port: int = 8000):
+        self._logger = logging.getLogger("led_controller")
+        self._led_controller = led_controller
         self._app = tornado.web.Application(
             [
-                (rf"{self.HEARTBEAT_ENDPOINT}", ListenerHeartbeatHandler),
-                (rf"{self.LED_COMMAND_ENDPOINT}", LedCommandRequestHandler),
-                (rf"{self.DETECTED_ACTION_ENDPOINT}", DetectedActionRequestHandler),
+                (
+                    rf"{self.HEARTBEAT_ENDPOINT}",
+                    ListenerHeartbeatHandler,
+                    dict(led_controller=self._led_controller),
+                ),
+                (
+                    rf"{self.LED_COMMAND_ENDPOINT}",
+                    LedCommandRequestHandler,
+                    dict(led_controller=self._led_controller),
+                ),
+                (
+                    rf"{self.DETECTED_ACTION_ENDPOINT}",
+                    DetectedActionRequestHandler,
+                    dict(led_controller=self._led_controller),
+                ),
             ]
         )
         self._port = port
 
     def start(self):
         http_server = HTTPServer(self._app)
-        print(self._port)
         http_server.listen(self._port)
         print("Listening on http://localhost:%i" % self._port)
-        logger.info(
+        self._logger.info(
             "Starting http web service of LedController."
             f"Listening on http://localhost:{self._port}"
         )
         tornado.ioloop.IOLoop.current().start()
 
 
-def start_led_controller_http_service(port: int, config_file):
-    led_controller_obj.config(config_file)
-    web_service = HttpService()
+def start_led_controller_http_service(port: int, config_file: str):
+    led_controller = LedController()
+    led_controller.config(config_file)
+    web_service = HttpService(led_controller=led_controller, port=port)
     web_service.start()

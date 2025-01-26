@@ -1,5 +1,7 @@
+import datetime
 import logging.config
 import os
+from configparser import ConfigParser
 
 from lumos.definitions import Definitions
 
@@ -8,9 +10,20 @@ definitions = Definitions()
 long_conf_file = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "logging.conf"
 )
-os.makedirs(definitions.log_dir, exist_ok=True)
+configParser = ConfigParser()
+configParser.read(long_conf_file)
 
-if not os.path.exists(long_conf_file):
-    raise Exception(f"File {os.path.abspath(long_conf_file)} does not exist")
+current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+log_dir = os.path.join(definitions.log_dir, current_datetime)
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, "lumos.log")
 
-logging.config.fileConfig(long_conf_file)
+# Inject dynamic log file path into the configuration
+configParser.set("handler_lumosFileHandler", "args", f"('{log_file}', 'w')")
+
+# Write the updated configuration to a temporary file
+with open("logging_temp.conf", "w") as temp_config:
+    configParser.write(temp_config)
+
+# Load the logging configuration
+logging.config.fileConfig("logging_temp.conf")
