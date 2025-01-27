@@ -1,6 +1,7 @@
 import datetime
 import logging.config
 import os
+import tempfile
 from configparser import ConfigParser
 
 from lumos.definitions import Definitions
@@ -22,8 +23,11 @@ log_file = os.path.join(log_dir, "lumos.log")
 configParser.set("handler_lumosFileHandler", "args", f"('{log_file}', 'w')")
 
 # Write the updated configuration to a temporary file
-with open("logging_temp.conf", "w") as temp_config:
-    configParser.write(temp_config)
+tmp_file = tempfile.NamedTemporaryFile(
+    mode="w", delete=False, suffix=".logging.conf", prefix="lumos."
+)
+configParser.write(tmp_file)
+tmp_file.close()
 
 # Load the logging configuration
-logging.config.fileConfig("logging_temp.conf")
+logging.config.fileConfig(tmp_file.name)
