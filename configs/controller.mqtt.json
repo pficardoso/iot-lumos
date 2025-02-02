@@ -3,6 +3,9 @@
   "leds": {
     "window": {
       "address": "192.168.1.191"
+    },
+    "living room": {
+      "address": "192.168.1.192"
     }
   },
   "listeners": {
@@ -22,5 +25,6 @@
     "type": "mqtt",
     "broker_address": "localhost",
     "broker_port": 1883
-  }
+  },
+  "use_rhasspy": true
 }
