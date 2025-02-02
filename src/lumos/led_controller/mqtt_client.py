@@ -2,8 +2,10 @@ import json
 import logging
 
 from paho.mqtt import client as mqtt_client
+from paho.mqtt.matcher import MQTTMatcher
 
 from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
+from lumos.integrations.rhasspy import RhasspyHelper
 from lumos.led_controller.led_controller import LedController
 
 
@@ -18,6 +20,7 @@ class MQTTClient:
         client_id: str,
         host: str = "localhost",
         port: int = 1883,
+        use_rhasspy=False,
     ):
         self._client_id = client_id
         self._host = host
@@ -27,13 +30,21 @@ class MQTTClient:
         self._client.on_connect = self.on_connect
         self._client.on_message = self.on_message
         self._logger = logging.getLogger("led_controller")
+        self._use_rhasspy = use_rhasspy
         self.led_controller = led_controller
-        self.topic_handlers = {
+        self.mqtt_matcher = MQTTMatcher()
+        self.topic_filters_handlers = {
             self.DETECTED_ACTION_TOPIC: self.handle_detected_action,
             self.HEARTBEAT_TOPIC: self.handle_heartbeat,
         }
-        for topic in self.topic_handlers:
-            self._client.subscribe(topic)
+        if use_rhasspy:
+            self.topic_filters_handlers[
+                RhasspyHelper.RHASSPY_INTENT_FILTER
+            ] = self.handle_rhasspy_intent
+
+        for topic_filter, handler in self.topic_filters_handlers.items():
+            self._client.subscribe(topic_filter)
+            self.mqtt_matcher[topic_filter] = handler
 
     def loop_forever(self):
         self._logger.info(
@@ -49,14 +60,15 @@ class MQTTClient:
 
     def on_message(self, client, userdata, msg):
         self._logger.info(f"Received message `{msg.payload}` with topic `{msg.topic}`")
-        handler = self.topic_handlers.get(msg.topic)
-        if handler:
-            handler(msg.payload)
-        else:
-            # handle unknown topics
-            self._logger.error(
-                f"No handler for processing messages from topic {msg.topic}"
-            )
+
+        for handler in self.mqtt_matcher.iter_match(msg.topic):
+            if handler:
+                handler(msg.payload)
+            else:
+                # handle unknown topics
+                self._logger.error(
+                    f"No handler for processing messages from topic {msg.topic}"
+                )
 
     def handle_detected_action(self, payload: str):
         self._logger.info("Received a detected action. Processing...")
@@ -72,6 +84,29 @@ class MQTTClient:
             self._logger.warning(
                 "The received detected action was not processed with success"
             )
+
+    def handle_rhasspy_intent(self, payload: str):
+        self._logger.info("Received an intent from rhasspy. Processing...")
+
+        request_success = False
+
+        data = json.loads(payload)
+        try:
+            led_command_msg = RhasspyHelper().convert_intent_mqtt_to_led_command_msg(
+                data
+            )
+        except Exception:
+            self._logger.exception(
+                "Error while converting rhasspy intent to lumos led command"
+            )
+        else:
+            # only executed if try finishes without errors
+            request_success = self.led_controller.interpret_led_command(led_command_msg)
+
+        if request_success:
+            self._logger.info("The received intent was processed with success")
+        else:
+            self._logger.warning("The received intent was not processed with success")
 
     def handle_heartbeat(self, payload):
         self._logger.info("Received a heartbeat. Processing...")
@@ -89,10 +124,12 @@ class MQTTClient:
             )
 
 
-def start_led_controller_mqtt_client(broker_host: str, port: int, config_file: str):
+def start_led_controller_mqtt_client(
+    broker_host: str, port: int, config_file: str, use_rhasspy=False
+):
     led_controller = LedController()
     led_controller.config(config_file)
     mqtt_client_obj = MQTTClient(
-        led_controller, "lumos_led_controller", broker_host, port
+        led_controller, "lumos_led_controller", broker_host, port, use_rhasspy
     )
     mqtt_client_obj.loop_forever()

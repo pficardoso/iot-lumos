@@ -26,6 +26,7 @@ def run(args):
             config_data.protocol.broker_address,
             config_data.protocol.broker_port,
             args.config,
+            config_data.use_rhasspy,
         )
     elif isinstance(config_data.protocol, HttpProtocolConfig):
         from lumos.led_controller.http_service import start_led_controller_http_service
