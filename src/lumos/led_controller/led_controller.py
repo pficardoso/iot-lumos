@@ -108,6 +108,13 @@ class LedController:
         }
         for listener_name, id in self._listeners.items():
             self._listeners_ids[id] = listener_name
+
+        if config_data.use_rhasspy:
+            from lumos.integrations.rhasspy import RhasspyHelper
+
+            self._listeners[RhasspyHelper.LISTENER_NAME] = RhasspyHelper.LISTENER_ID
+            self._listeners_ids[RhasspyHelper.LISTENER_ID] = RhasspyHelper.LISTENER_NAME
+
         self._load_listener_led_actions_map(config_data.listener_led_map)
         self._configured = True
         self._logger.info(
@@ -318,7 +325,7 @@ class LedController:
             return False
 
         self._logger.info(
-            "Request was interpreted with success: triggering"
+            "Request was interpreted with success: triggering "
             f"action '{led_action}' to led '{led_name}'"
         )
         led_action_function_to_trigger = led_action_functions[led_action]
@@ -355,12 +362,16 @@ class LedController:
             return False
 
         self._logger.info(
-            "Request was interpreted with success: triggering"
+            "Request was interpreted with success: triggering "
             f"action '{data.command}' to led '{data.target_led}'"
         )
 
         led_action_function_to_trigger = led_action_functions[data.command]
-        led_action_function_to_trigger(self, data.led_name)
+        led_action_function_to_trigger(
+            self,
+            data.target_led,
+            **data.command_args if data.command_args is not None else {},
+        )
         return True
 
     def interpret_heartbeat(self, data: ListenerHeartbeatMessage):
