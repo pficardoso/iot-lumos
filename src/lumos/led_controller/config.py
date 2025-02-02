@@ -35,6 +35,7 @@ class LedControllerConfig(BaseModel):
     listeners: Dict[str, ListenerConfig]  # {listener_name: Listener}
     listener_led_map: List[ListenerLedMapConfig]
     protocol: Union[HttpProtocolConfig, MqttProtocolConfig]
+    use_rhasspy: bool = False
 
     @field_validator("listener_led_map")
     def validate_listener_led_map(cls, v, info):
