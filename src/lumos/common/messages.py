@@ -13,9 +13,9 @@ class DetectedActionMessage:
 
 @dataclass
 class LedCommandMessage:
-    listener_id: Optional[str]
-    listener_name: Optional[str]
-    listener_type: Optional[str]
+    listener_id: str
+    listener_name: str
+    listener_type: str
     target_led: str
     command: str
     command_args: Optional[dict]
