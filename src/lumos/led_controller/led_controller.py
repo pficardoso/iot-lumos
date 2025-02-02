@@ -209,6 +209,81 @@ class LedController:
         except Exception:
             self._logger.error(error_message)
 
+    @led_action("change_brightness")
+    def change_led_brightness(self, led_name: str, brightness: int):
+        """
+        Send a message to change the brightness of a led strip.
+
+        The brightness level is expected to be a int between 0 and 255.
+        The led strip to be changed is specified by its name.
+
+        Parameters
+        ----------
+        led_name : str
+            The name of the led strip to be changed.
+        brightness : int
+            The new brightness of the led strip.
+        """
+
+        error_message = (
+            "Change brightness message was not sent with success" f'to led "{led_name}"'
+        )
+        if not self._check_led_exists(led_name):
+            self._logger.error(error_message)
+            return
+
+        ip = self._leds[led_name]
+        self._logger.info(
+            f'Sending `change brightness` message to led "{led_name}", with ip {ip}'
+        )
+        try:
+            url = f"http://{ip}/win&A={brightness}"
+            response = requests.get(url, timeout=0.2)
+            if response.status_code == 200:
+                self._logger.info(
+                    f'Change brightness on led "{led_name}" done with success'
+                )
+            else:
+                self._logger.error(error_message)
+        except Exception:
+            self._logger.error(error_message)
+
+    @led_action("change_color")
+    def change_led_color(self, led_name: str, rgb_color: tuple[int, int, int]):
+        """
+        Send a message to change the color of a led strip.
+
+        The color is expected to be a tuple of three integers between 0 and 255,
+        representing the RGB values. The led strip to be changed is specified by its name.
+
+        Parameters
+        ----------
+        led_name : str
+            The name of the led strip to be changed.
+        rgb_color : tuple[int, int, int]
+            The new color of the led strip.
+        """
+        error_message = (
+            "Change color message was not sent with success" f'to led "{led_name}"'
+        )
+        if not self._check_led_exists(led_name):
+            self._logger.error(error_message)
+            return
+
+        ip = self._leds[led_name]
+        self._logger.info(
+            f'Sending `change color` message to led "{led_name}", with ip {ip}'
+        )
+        try:
+            url = f"http://{ip}/win&R={rgb_color[0]}&G={rgb_color[1]}&B={rgb_color[2]}"
+            response = requests.get(url, timeout=0.2)
+            if response.status_code == 200:
+                self._logger.info(f'Change color on led "{led_name}" done with success')
+            else:
+                self._logger.error(error_message)
+        except Exception:
+            self._logger.error(error_message)
+
     def interpret_detected_action(self, data: DetectedActionMessage):
         self._logger.info(
             "Interpreting a request made by a listener: resolving listener identification..."
