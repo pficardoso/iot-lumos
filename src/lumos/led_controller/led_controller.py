@@ -28,7 +28,10 @@ def led_action(led_action_name):
 
 
 class LedController:
-    """"""
+    TOGGLE_ACTION = "toggle"
+    CHANGE_REL_BRIGHTNESS_ACTION = "change_rel_brightness"
+    CHANGE_BRIGHTNESS_ACTION = "change_brightness"
+    CHANGE_COLOR_ACTION = "change_color"
 
     def __init__(
         self,
@@ -144,7 +147,7 @@ class LedController:
     Workers
     """
 
-    @led_action("toggle")
+    @led_action(TOGGLE_ACTION)
     def toggle_led(self, led_name):
         self._logger.info(f"Received a request to toggle led with name {led_name}")
         error_message = f'Toggle message was not sent with success to led "{led_name}"'
@@ -168,7 +171,7 @@ class LedController:
 
         return
 
-    @led_action("change_rel_brightness")
+    @led_action(CHANGE_REL_BRIGHTNESS_ACTION)
     def change_led_rel_brightness(self, led_name, mode="increase"):
         error_message = (
             "Change rel brightness message was not sent with success"
@@ -209,7 +212,7 @@ class LedController:
         except Exception:
             self._logger.error(error_message)
 
-    @led_action("change_brightness")
+    @led_action(CHANGE_BRIGHTNESS_ACTION)
     def change_led_brightness(self, led_name: str, brightness: int):
         """
         Send a message to change the brightness of a led strip.
@@ -248,7 +251,7 @@ class LedController:
         except Exception:
             self._logger.error(error_message)
 
-    @led_action("change_color")
+    @led_action(CHANGE_COLOR_ACTION)
     def change_led_color(self, led_name: str, rgb_color: tuple[int, int, int]):
         """
         Send a message to change the color of a led strip.
