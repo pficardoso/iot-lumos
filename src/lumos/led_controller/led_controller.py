@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Dict, List
 
@@ -88,12 +87,7 @@ class LedController:
                 "led_action": led_action,
             }
 
-    def config(self, config_path):
-        self._logger.info(f"Starting configuration using {config_path} file")
-
-        with open(config_path) as f_conf:
-            config_data = json.load(f_conf)
-
+    def config(self, config_data: LedControllerConfig):
         config_data = LedControllerConfig(**config_data)
 
         # makes parse of data into instance

@@ -1,4 +1,7 @@
+import json
 from argparse import ArgumentParser
+
+from lumos.action_listener.config import TimerConfig
 
 
 def add_arguments(parser: ArgumentParser) -> None:
@@ -17,5 +20,6 @@ def run(args) -> None:
 
     catalog = ActionListerCatalog()
     action_listener = catalog.get_action_listener("Timer")
-    action_listener.config(args.config)
+    config = TimerConfig(**json.load(open(args.config)))
+    action_listener.config(config)
     action_listener.start()

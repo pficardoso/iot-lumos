@@ -138,10 +138,30 @@ class ActionListener(metaclass=abc.ABCMeta):
     Setters/Loaders
     """
 
-    def config(self, config_path) -> bool:
-        with open(config_path) as f_conf:
-            config_data = json.load(f_conf)
-        self._logger.info(f"Starting configuration using {config_path} file")
+    def config(self, config_data: BaseActionListenerConfig) -> bool:
+        """
+        Configures the ActionListener with the given configuration data.
+
+        This method attempts to configure the ActionListener by calling both
+        `_config_general` and `_config_specialized` methods. If any validation
+        error occurs during the configuration, it logs the error and raises
+        an exception.
+
+        Parameters
+        ----------
+        config_data : BaseActionListenerConfig or derived classes.
+            The configuration data to initialize the ActionListener.
+
+        Returns
+        -------
+        bool
+            True if the ActionListener is successfully configured, False otherwise.
+
+        Raises
+        ------
+        ValidationError
+            If the configuration data is invalid.
+        """
 
         try:
             is_configured_gen = self._config_general(config_data)
@@ -178,8 +198,24 @@ class ActionListener(metaclass=abc.ABCMeta):
         return True
 
     @abc.abstractmethod
-    def _config_specialized(self, config_dict: dict) -> bool:
-        pass
+    def _config_specialized(self, config_data: BaseActionListenerConfig) -> bool:
+        """
+        Perform specialized configuration for the ActionListener.
+
+        This method should be implemented by subclasses to handle any specific
+        configuration tasks that are unique to the subclass. It is called during
+        the overall configuration process managed by the `config` method.
+
+        Parameters
+        ----------
+        config_data : BaseActionListenerConfig or derived classes.
+            The configuration data specific to the ActionListener subclass.
+
+        Returns
+        -------
+        bool
+            True if the specialized configuration is successful, False otherwise.
+        """
 
     """
     Getters

@@ -34,14 +34,13 @@ class Timer(ActionListener):
     Setters/Loaders
     """
 
-    def _config_specialized(self, config_dict: dict):
+    def _config_specialized(self, config_data: TimerConfig):
         """
         config_check_flag = self._config_checker.check_config_data(
             config_data, self.type
         )
         """
-        config = TimerConfig(**config_dict)
-        self.timer_period = config.timer_period
+        self.timer_period = config_data.timer_period
         self._logger.info(f"Configured with time period of {self.timer_period} seconds")
         return True
 

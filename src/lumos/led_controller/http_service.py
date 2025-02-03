@@ -10,6 +10,7 @@ from lumos.common.messages import (
     LedCommandMessage,
     ListenerHeartbeatMessage,
 )
+from lumos.led_controller.config import LedControllerConfig
 from lumos.led_controller.led_controller import LedController
 
 
@@ -147,8 +148,8 @@ class HttpService:
         tornado.ioloop.IOLoop.current().start()
 
 
-def start_led_controller_http_service(port: int, config_file: str):
+def start_led_controller_http_service(config: LedControllerConfig):
     led_controller = LedController()
-    led_controller.config(config_file)
-    web_service = HttpService(led_controller=led_controller, port=port)
+    led_controller.config(config)
+    web_service = HttpService(led_controller=led_controller, port=config.protocol.port)
     web_service.start()

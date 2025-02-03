@@ -6,6 +6,7 @@ from paho.mqtt.matcher import MQTTMatcher
 
 from lumos.common.messages import DetectedActionMessage, ListenerHeartbeatMessage
 from lumos.integrations.rhasspy import RhasspyHelper
+from lumos.led_controller.config import LedControllerConfig
 from lumos.led_controller.led_controller import LedController
 
 
@@ -124,12 +125,14 @@ class MQTTClient:
             )
 
 
-def start_led_controller_mqtt_client(
-    broker_host: str, port: int, config_file: str, use_rhasspy=False
-):
+def start_led_controller_mqtt_client(config: LedControllerConfig):
     led_controller = LedController()
-    led_controller.config(config_file)
+    led_controller.config(config)
     mqtt_client_obj = MQTTClient(
-        led_controller, "lumos_led_controller", broker_host, port, use_rhasspy
+        led_controller,
+        "lumos_led_controller",
+        config.protocol.broker_address,
+        config.protocol.broker_port,
+        config.use_rhasspy,
     )
     mqtt_client_obj.loop_forever()
