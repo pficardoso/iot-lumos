@@ -24,7 +24,7 @@ class RhasspyHelper:
         try:
             intent_name: str = intent_msg["intent"]["intentName"]
             slots: dict = {
-                slot["slotName"]: slot["rawValue"] for slot in intent_msg["slots"]
+                slot["slotName"]: slot["value"]["value"] for slot in intent_msg["slots"]
             }
             target_led = slots.pop("light_name")
         except Exception:

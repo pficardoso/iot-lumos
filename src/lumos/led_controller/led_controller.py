@@ -232,7 +232,7 @@ class LedController:
         led_name : str
             The name of the led strip to be changed.
         brightness : int
-            The new brightness of the led strip.
+            The new brightness of the led strip. From 0 to 255
         """
 
         error_message = (
